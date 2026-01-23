@@ -1,0 +1,30 @@
+[Unit]
+Description=Cloudflare Magic Transit Auto-Withdraw Manager
+Documentation=https://developers.cloudflare.com/magic-transit/
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/root/Cloudflare_MT_Integration/scripts
+ExecStart=/usr/bin/python3 /root/Cloudflare_MT_Integration/scripts/cloudflare-autowithdraw.py daemon
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cloudflare-autowithdraw
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+
+# Security
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/root/Cloudflare_MT_Integration/logs /root/Cloudflare_MT_Integration/db
+
+[Install]
+WantedBy=multi-user.target

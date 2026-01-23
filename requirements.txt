@@ -1,0 +1,8 @@
+# Cloudflare Magic Transit Integration - Python Dependencies
+# Install with: pip3 install -r requirements.txt
+
+# Web framework for webhook receiver
+flask>=2.0.0
+
+# HTTP client for Cloudflare API and Telegram
+requests>=2.28.0

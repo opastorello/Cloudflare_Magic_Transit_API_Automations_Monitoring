@@ -1,0 +1,4516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Magic Transit Dashboard - GOLINE SOC</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border-color: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-red: #f85149;
+            --accent-yellow: #d29922;
+            --accent-orange: #f0883e;
+            --accent-purple: #a371f7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #f6821f 0%, #ff6633 50%, #faad3f 100%);
+            padding: 0;
+            display: flex;
+            align-items: stretch;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+
+        .logo-container {
+            background: white;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .cf-logo {
+            height: 36px;
+        }
+
+        .logo-divider {
+            width: 1px;
+            height: 30px;
+            background: #ddd;
+        }
+
+        .goline-logo {
+            height: 28px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #333;
+            letter-spacing: 1px;
+        }
+
+        .goline-logo-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .goline-logo-img {
+            height: 40px;
+        }
+
+        .header-title {
+            padding: 0 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 1.4rem;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .header-subtitle {
+            color: rgba(255,255,255,0.9);
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .header-center {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: white;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .header-center .timestamp {
+            color: white;
+            font-size: 0.85rem;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: white;
+            padding-right: 1.5rem;
+            flex-shrink: 0;
+            flex-wrap: nowrap;
+        }
+
+        .header-right .timestamp {
+            color: white;
+            font-size: 0.85rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .stat-desc {
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            margin-top: 0.5rem;
+            opacity: 0.7;
+            font-style: italic;
+        }
+
+        .stat-card:hover .stat-desc {
+            opacity: 1;
+        }
+
+        /* Volume counters - more visible */
+        .stat-vol {
+            color: #fbbf24; /* Amber/Gold */
+            font-size: 0.95rem;
+            font-weight: 600;
+            opacity: 1;
+            font-style: normal;
+        }
+
+        /* Smaller labels for IP cards */
+        .stat-label-sm {
+            font-size: 0.65rem;
+            white-space: nowrap;
+        }
+
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            align-items: baseline;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .section-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Stat Card Variants */
+        .stat-dropped .stat-value {
+            color: var(--accent-red);
+        }
+
+        .stat-passed .stat-value {
+            color: var(--accent-green);
+        }
+
+        .stat-info .stat-value {
+            color: var(--accent-orange);
+        }
+
+        /* Network Flow card variants */
+        .stat-rate .stat-value {
+            color: #3b82f6; /* Blue for rates */
+            font-size: 1.3rem; /* Smaller for longer text like "346.72 Mbps" */
+        }
+
+        .stat-protocol .stat-value {
+            color: #8b5cf6; /* Purple for protocol */
+        }
+
+        .stat-source .stat-value {
+            color: #f59e0b; /* Amber for source */
+        }
+
+        .stat-router .stat-value {
+            color: #10b981; /* Emerald for router */
+        }
+
+        .stat-destination .stat-value {
+            color: #ec4899; /* Pink for destination */
+        }
+
+        .stat-value-text {
+            font-size: 1.2rem;
+            word-break: break-word;
+        }
+
+        .stat-value-ip {
+            font-size: 0.85rem;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1400px) {
+            .header-title h1 {
+                font-size: 1.2rem;
+            }
+            .header-subtitle {
+                font-size: 0.7rem;
+            }
+            .goline-logo-img {
+                height: 32px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .grid { grid-template-columns: 1fr; }
+
+            .header {
+                flex-wrap: wrap;
+            }
+            .header-left {
+                flex: 1 1 auto;
+            }
+            .header-right {
+                flex: 0 1 auto;
+                gap: 0.75rem;
+                padding-right: 1rem;
+            }
+            .header-title {
+                padding: 0 1rem;
+            }
+            .header-title h1 {
+                font-size: 1.1rem;
+            }
+            .status-indicator {
+                padding: 0.4rem 0.75rem;
+                font-size: 0.8rem;
+            }
+            .goline-logo-img {
+                height: 28px;
+            }
+        }
+
+        @media (max-width: 1300px) {
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 1000px) {
+            .header-center {
+                display: none;
+            }
+            .header-right {
+                gap: 0.5rem;
+                padding: 0.5rem 1rem;
+            }
+            .header-right .timestamp {
+                display: none;
+            }
+            .refresh-btn {
+                padding: 0.4rem 0.75rem;
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+            }
+            .header-left {
+                width: 100%;
+                justify-content: center;
+            }
+            .header-right {
+                width: 100%;
+                justify-content: center;
+                padding: 0.75rem;
+                background: rgba(0,0,0,0.1);
+            }
+            .header-title {
+                text-align: center;
+                padding: 0.75rem;
+            }
+            .logo-container {
+                border-radius: 0;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .stat-value {
+                font-size: 2rem;
+            }
+            .service-name {
+                font-size: 0.75rem;
+                max-width: 200px;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .container {
+                padding: 1rem;
+            }
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: var(--bg-tertiary);
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-title-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        .card-description {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .card-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .card-status {
+            font-size: 0.75rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .card-body {
+            padding: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .card-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .card-body::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        .card-body::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            color: var(--text-secondary);
+            font-weight: 500;
+            background: var(--bg-tertiary);
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--accent-green);
+        }
+
+        .badge-danger {
+            background: rgba(248, 81, 73, 0.2);
+            color: var(--accent-red);
+        }
+
+        .badge-warning {
+            background: rgba(210, 153, 34, 0.2);
+            color: var(--accent-yellow);
+        }
+
+        .badge-info {
+            background: rgba(88, 166, 255, 0.2);
+            color: var(--accent-blue);
+        }
+
+        .badge-purple {
+            background: rgba(163, 113, 247, 0.2);
+            color: var(--accent-purple);
+        }
+
+        /* DDoS Overrides styles */
+        #ddos-overrides-content .data-table {
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        #ddos-overrides-content .data-table th:nth-child(1),
+        #ddos-overrides-content .data-table td:nth-child(1) { width: 70px; }  /* Order */
+
+        #ddos-overrides-content .data-table th:nth-child(2),
+        #ddos-overrides-content .data-table td:nth-child(2) { width: 25%; }  /* Name */
+
+        #ddos-overrides-content .data-table th:nth-child(3),
+        #ddos-overrides-content .data-table td:nth-child(3) { width: auto; }  /* Expression - flexible */
+
+        #ddos-overrides-content .data-table th:nth-child(4),
+        #ddos-overrides-content .data-table td:nth-child(4) { width: 90px; white-space: nowrap; }  /* Target Rule */
+
+        #ddos-overrides-content .data-table th:nth-child(5),
+        #ddos-overrides-content .data-table td:nth-child(5) { width: 85px; white-space: nowrap; }  /* Sensitivity */
+
+        #ddos-overrides-content .data-table th:nth-child(6),
+        #ddos-overrides-content .data-table td:nth-child(6) { width: 75px; }  /* Status */
+
+        #ddos-overrides-content .data-table th:nth-child(7),
+        #ddos-overrides-content .data-table td:nth-child(7) { width: 110px; }  /* Actions */
+
+        #ddos-overrides-content .data-table td:nth-child(2) {
+            word-wrap: break-word;
+        }
+
+        .expression-code {
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.7rem;
+            background: var(--bg-tertiary);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            color: var(--accent-blue);
+            word-break: break-all;
+            display: inline-block;
+        }
+
+        .sensitivity-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state p {
+            margin: 0.5rem 0;
+        }
+
+        .empty-hint {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        .prefix-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .prefix-row:last-child {
+            border-bottom: none;
+        }
+
+        .prefix-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .prefix-cidr {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-weight: 600;
+        }
+
+        .prefix-desc {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .calm-status {
+            font-size: 0.75rem;
+            margin-top: 4px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        .calm-status.attack {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .calm-status.calm {
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .calm-status.ready {
+            color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .calm-status.waiting {
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .calm-status.constraint {
+            color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .service-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .service-row:last-child {
+            border-bottom: none;
+        }
+
+        .service-name {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 0.85rem;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .rule-category {
+            margin-bottom: 1rem;
+        }
+
+        .rule-category-title {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .rule-item {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.875rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            color: var(--accent-red);
+            text-align: center;
+            padding: 1rem;
+        }
+
+        /* Info boxes for status messages */
+        .info-box {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem;
+            border-radius: 8px;
+            margin: 1rem;
+        }
+
+        .info-box-muted {
+            background: rgba(139, 148, 158, 0.1);
+            border: 1px solid rgba(139, 148, 158, 0.3);
+        }
+
+        .info-box-success {
+            background: rgba(63, 185, 80, 0.1);
+            border: 1px solid rgba(63, 185, 80, 0.3);
+        }
+
+        .info-icon {
+            font-size: 2rem;
+            flex-shrink: 0;
+        }
+
+        .info-text {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .info-text strong {
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .info-detail {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .refresh-btn {
+            background: white;
+            border: none;
+            color: #d35400;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .refresh-btn:hover {
+            background: #f8f8f8;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+        }
+
+        .connectors-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .connector-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #888;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        .connector-status-dot.healthy {
+            background: var(--accent-green);
+        }
+
+        .connector-status-dot.degraded {
+            background: var(--accent-orange);
+        }
+
+        .connector-status-dot.down {
+            background: var(--accent-red);
+        }
+
+        .connector-status-dot.unknown {
+            background: #888;
+        }
+
+        /* Action Buttons for Prefix Management */
+        .prefix-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn-header-edit {
+            background: var(--accent-blue);
+            border: none;
+            color: white;
+            padding: 0.35rem 0.85rem;
+            border-radius: 5px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-left: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-header-edit:hover {
+            background: #4c9aed;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+
+        .btn-action {
+            padding: 0.3rem 0.7rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-advertise {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        .btn-advertise:hover:not(:disabled) {
+            background: #da3633;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+
+        .btn-withdraw {
+            background: var(--accent-green);
+            color: white;
+        }
+
+        .btn-withdraw:hover:not(:disabled) {
+            background: #2ea043;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+
+        .btn-action:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .btn-action.loading {
+            opacity: 0.7;
+            cursor: wait;
+        }
+
+        .timestamp {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .ip-mono {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.8rem;
+        }
+
+        .truncate {
+            max-width: 150px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .footer {
+            border-top: 1px solid var(--border-color);
+            padding: 1rem 0;
+            margin-top: 2rem;
+        }
+
+        .footer-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .footer-left img {
+            height: 20px;
+            opacity: 0.9;
+        }
+
+        .footer-text {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.85);
+            font-weight: 500;
+        }
+
+        .footer-right {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .footer-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @media (max-width: 768px) {
+            .footer-content {
+                flex-direction: column;
+                gap: 0.5rem;
+                text-align: center;
+            }
+        }
+
+        /* DDoS Sensitivity Grid */
+        .ddos-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .ddos-card {
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 0.75rem;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .ddos-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .ddos-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-top: 0.25rem;
+        }
+
+        .ddos-desc {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .ddos-block .ddos-value { color: var(--accent-red); }
+        .ddos-dynamic .ddos-value { color: var(--accent-blue); }
+        .ddos-log .ddos-value { color: var(--accent-yellow); }
+
+        .ddos-clickable {
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .ddos-clickable:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-orange);
+            box-shadow: 0 4px 12px rgba(240, 136, 62, 0.2);
+        }
+
+        .ddos-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .ddos-ruleset {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 500px) {
+            .ddos-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Password Change Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        /* Generic Modal (for override modals) */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            margin: 1rem;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, #f6821f 0%, #ff6633 100%);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .form-error {
+            color: var(--accent-red);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .form-success {
+            color: var(--accent-green);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .form-hint {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        /* MNM Rule Edit Modal */
+        .mnm-edit-modal {
+            max-width: 450px;
+        }
+
+        .mnm-edit-modal .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .mnm-edit-modal .form-hint {
+            display: block;
+            margin-top: 0.25rem;
+        }
+
+        .mnm-edit-modal .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .mnm-edit-modal .checkbox-label input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .mnm-edit-modal .modal-footer {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .mnm-edit-modal .btn-cancel {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border: none;
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .mnm-edit-modal .btn-cancel:hover {
+            background: var(--border-color);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+
+        .mnm-edit-modal .btn-save {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            background: var(--accent-green);
+            border: none;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .mnm-edit-modal .btn-save:hover {
+            background: #2ea043;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+
+        .mnm-rule-info {
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .mnm-rule-info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            padding: 0.25rem 0;
+        }
+
+        .mnm-rule-info-label {
+            color: var(--text-secondary);
+        }
+
+        .mnm-rule-info-value {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            z-index: 2000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: var(--accent-green);
+            color: white;
+        }
+
+        .toast.error {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        /* DDoS Override Modal Styles */
+        #override-modal .form-group label,
+        #delete-override-modal .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        #override-modal input[type="text"],
+        #override-modal textarea,
+        #override-modal select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: inherit;
+        }
+
+        #override-modal textarea {
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            resize: vertical;
+        }
+
+        #override-modal input:focus,
+        #override-modal textarea:focus,
+        #override-modal select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        #override-modal .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        #override-modal .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        #override-modal .checkbox-label input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        #override-modal .modal-footer,
+        #delete-override-modal .modal-footer {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .btn-cancel {
+            padding: 0.6rem 1.25rem;
+            background: var(--bg-tertiary);
+            border: none;
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-cancel:hover {
+            background: var(--border-color);
+        }
+
+        .btn-save {
+            padding: 0.6rem 1.25rem;
+            background: var(--accent-blue);
+            border: none;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-save:hover {
+            background: #4393e6;
+        }
+
+        .btn-validate {
+            padding: 0.6rem 1.25rem;
+            background: var(--accent-purple);
+            border: none;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-validate:hover {
+            background: #8b5cf6;
+        }
+
+        .btn-delete {
+            padding: 0.6rem 1.25rem;
+            background: var(--accent-red);
+            border: none;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-delete:hover {
+            background: #dc2626;
+        }
+
+        .btn-add {
+            padding: 0.5rem 1rem;
+            background: var(--accent-green);
+            border: none;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-add:hover {
+            background: #2ea043;
+            transform: translateY(-1px);
+        }
+
+        .btn-edit-small,
+        .btn-delete-small {
+            display: inline-block;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.75rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .btn-edit-small {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-edit-small:hover {
+            background: #4393e6;
+        }
+
+        .btn-delete-small {
+            background: var(--accent-red);
+            color: white;
+            margin-left: 0.4rem;
+        }
+
+        .btn-delete-small:hover {
+            background: #dc2626;
+        }
+
+        .btn-order {
+            display: inline-block;
+            padding: 0.2rem 0.4rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            cursor: pointer;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            margin: 0 1px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-order:hover:not(:disabled) {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+
+        .btn-order:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .order-input {
+            width: 32px;
+            padding: 0.15rem 0.2rem;
+            font-size: 0.75rem;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            margin: 0 2px;
+        }
+
+        .order-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .order-input::-webkit-inner-spin-button,
+        .order-input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .order-cell {
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        .actions-cell {
+            white-space: nowrap;
+        }
+
+        .validation-message {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .validation-message.valid {
+            background: rgba(63, 185, 80, 0.15);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+        }
+
+        .validation-message.invalid {
+            background: rgba(248, 81, 73, 0.15);
+            color: var(--accent-red);
+            border: 1px solid var(--accent-red);
+        }
+
+        .warning-text {
+            color: var(--accent-yellow);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        #override-modal code {
+            background: var(--bg-tertiary);
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            color: var(--accent-blue);
+        }
+
+        /* Editor Mode Toggle */
+        .editor-mode-toggle {
+            display: flex;
+            gap: 0;
+            margin-bottom: 1.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 3px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .mode-btn:hover:not(.active) {
+            color: var(--text-primary);
+        }
+
+        /* Preview Box */
+        .preview-box {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .preview-title {
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+
+        .preview-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            align-items: flex-start;
+        }
+
+        .preview-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .preview-label {
+            color: var(--text-secondary);
+            min-width: 100px;
+        }
+
+        .preview-box code {
+            background: var(--bg-primary);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            word-break: break-all;
+        }
+
+        /* Attack/Analytics/MNM Row hover */
+        .attack-row, .analytics-row, .rule-item-clickable {
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+
+        .attack-row:hover, .analytics-row:hover, .rule-item-clickable:hover {
+            background: var(--bg-tertiary) !important;
+        }
+
+        .detail-modal {
+            max-width: 700px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .detail-section {
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 0.6rem 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-section-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--accent-orange);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.3rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 0.2rem 0;
+            font-size: 0.8rem;
+        }
+
+        .detail-row-inline {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            padding: 0.2rem 0;
+            font-size: 0.8rem;
+        }
+
+        .detail-row-inline .detail-item {
+            display: flex;
+            gap: 0.3rem;
+        }
+
+        .detail-label {
+            color: var(--text-secondary);
+            flex-shrink: 0;
+            margin-right: 1rem;
+        }
+
+        .detail-value {
+            color: var(--text-primary);
+            text-align: right;
+            word-break: break-all;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+
+        .detail-value-text {
+            font-family: inherit;
+        }
+
+        .detail-description {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 0.5rem;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 80px;
+            overflow-y: auto;
+        }
+
+        .detail-link {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-size: 0.8rem;
+        }
+
+        .detail-link:hover {
+            text-decoration: underline;
+        }
+
+        .detail-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .detail-badge-start {
+            background: rgba(248, 81, 73, 0.2);
+            color: var(--accent-red);
+        }
+
+        .detail-badge-end {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--accent-green);
+        }
+
+        .detail-badge-withdraw {
+            background: rgba(88, 166, 255, 0.2);
+            color: var(--accent-blue);
+        }
+
+        @media (max-width: 600px) {
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+            .detail-modal {
+                max-width: 95%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <div class="logo-container">
+                <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IiB2aWV3Qm94PSIwIDAgMjUyIDExNS4zIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAyNTIgMTE1LjM7IiB4bWw6c3BhY2U9InByZXNlcnZlIj4KPHN0eWxlIHR5cGU9InRleHQvY3NzIj4uc3Qye2ZpbGw6I0Y0ODIyMDt9LnN0M3tmaWxsOiNGQkFENDA7fS5zdDR7ZmlsbDojNTY1NzVCO308L3N0eWxlPgo8Zz48cG9seWdvbiBmaWxsPSIjRkZGIiBwb2ludHM9IjIwOC41LDQ1LjUgMTk4LjEsNDMgMTk2LjQsNDIuMyAxNDguNyw0Mi43IDE0OC43LDY1LjcgMjA4LjYsNjUuOCIvPjxnPjxwYXRoIGNsYXNzPSJzdDIiIGQ9Ik0xODkuMSw2My42YzAuNS0xLjksMC4zLTMuNi0wLjYtNC45Yy0wLjgtMS4yLTIuMi0xLjktMy45LTEuOWwtMzIuMi0wLjRjLTAuMiwwLTAuNC0wLjEtMC41LTAuM2MtMC4xLTAuMi0wLjEtMC40LTAuMS0wLjZjMC4xLTAuMywwLjQtMC42LDAuNy0wLjZsMzIuNS0wLjRjMy45LTAuMiw4LTMuMyw5LjUtNy4xbDEuOS00LjhjMC4xLTAuMiwwLjEtMC40LDAuMS0wLjZjLTIuMS05LjUtMTAuNS0xNi41LTIwLjYtMTYuNWMtOS4zLDAtMTcuMiw2LTIwLDE0LjNjLTEuOC0xLjQtNC4yLTIuMS02LjctMS44Yy00LjUsMC40LTgsNC04LjUsOC41Yy0wLjEsMS4yLDAsMi4zLDAuMiwzLjNjLTcuMywwLjItMTMuMSw2LjItMTMuMSwxMy41YzAsMC43LDAuMSwxLjMsMC4xLDJjMCwwLjMsMC4zLDAuNSwwLjYsMC41bDU5LjQsMGMwLjMsMCwwLjctMC4yLDAuOC0wLjZMMTg5LjEsNjMuNnoiLz48cGF0aCBjbGFzcz0ic3QzIiBkPSJNMTk5LjMsNDIuOWMtMC4zLDAtMC42LDAtMC45LDBjLTAuMiwwLTAuNCwwLjItMC41LDAuNGwtMS4zLDQuNGMtMC41LDEuOS0wLjMsMy42LDAuNiw0LjljMC44LDEuMiwyLjIsMS45LDMuOSwxLjlsNi45LDAuNGMwLjIsMCwwLjQsMC4xLDAuNSwwLjNjMC4xLDAuMiwwLjEsMC40LDAuMSwwLjZjLTAuMSwwLjMtMC40LDAuNi0wLjcsMC42bC03LjEsMC40Yy0zLjksMC4yLTgsMy4zLTkuNSw3LjFsLTAuNSwxLjNjLTAuMSwwLjIsMC4xLDAuNSwwLjQsMC41aDI0LjVjMC4zLDAsMC42LTAuMiwwLjYtMC41YzAuNC0xLjUsMC43LTMuMSwwLjctNC44QzIxNi45LDUwLjgsMjA5LDQyLjksMTk5LjMsNDIuOSIvPjxwYXRoIGNsYXNzPSJzdDQiIGQ9Ik0yMTkuNCw3Ni4xYy0wLjksMC0xLjYtMC43LTEuNi0xLjZjMC0wLjksMC43LTEuNiwxLjYtMS42YzAuOSwwLDEuNiwwLjcsMS42LDEuNkMyMjAuOSw3NS40LDIyMC4yLDc2LjEsMjE5LjQsNzYuMSBNMjE5LjQsNzMuM2MtMC43LDAtMS4zLDAuNi0xLjMsMS4zYzAsMC43LDAuNiwxLjMsMS4zLDEuM2MwLjcsMCwxLjMtMC42LDEuMy0xLjNDMjIwLjYsNzMuOCwyMjAuMSw3My4zLDIxOS40LDczLjMgTTIyMC4yLDc1LjRoLTAuNGwtMC4zLTAuNkgyMTl2MC42aC0wLjN2LTEuN2gwLjhjMC40LDAsMC42LDAuMiwwLjYsMC42YzAsMC4yLTAuMSwwLjUtMC40LDAuNUwyMjAuMiw3NS40eiBNMjE5LjUsNzQuNWMwLjEsMCwwLjMtMC4xLDAuMy0wLjNjMC0wLjItMC4xLTAuMy0wLjMtMC4zSDIxOXYwLjVIMjE5LjV6Ii8+PHBvbHlnb24gY2xhc3M9InN0NCIgcG9pbnRzPSI1My4zLDcyLjggNTcuNCw3Mi44IDU3LjQsODMuOSA2NC41LDgzLjkgNjQuNSw4Ny41IDUzLjMsODcuNSIvPjxwYXRoIGNsYXNzPSJzdDQiIGQ9Ik02OC43LDgwLjJMNjguNyw4MC4yYzAtNC4zLDMuNC03LjcsNy45LTcuN2M0LjUsMCw3LjksMy40LDcuOSw3LjZ2MGMwLDQuMi0zLjQsNy42LTcuOSw3LjZDNzIsODcuNyw2OC43LDg0LjQsNjguNyw4MC4yIE04MC4zLDgwLjJMODAuMyw4MC4yYzAtMi4yLTEuNS00LTMuOC00Yy0yLjIsMC0zLjcsMS44LTMuNywzLjl2MGMwLDIuMSwxLjUsNCwzLjcsNEM3OC44LDg0LjEsODAuMyw4Mi4zLDgwLjMsODAuMiIvPjxwYXRoIGNsYXNzPSJzdDQiIGQ9Ik04OS40LDgxdi04LjJoNC4xdjguMWMwLDIuMSwxLjEsMy4xLDIuNywzLjFzMi43LTEsMi43LTN2LTguM2g0LjF2OC4xYzAsNC43LTIuNyw2LjgtNi45LDYuOEM5Miw4Ny43LDg5LjQsODUuNiw4OS40LDgxIi8+PHBhdGggY2xhc3M9InN0NCIgZD0iTTEwOS4zLDcyLjhoNS43YzUuMiwwLDguMywzLDguMyw3LjJ2MGMwLDQuMi0zLjEsNy40LTguNCw3LjRoLTUuNlY3Mi44eiBNMTE1LDgzLjljMi40LDAsNC0xLjMsNC0zLjd2MGMwLTIuMy0xLjYtMy43LTQtMy43aC0xLjd2Ny41SDExNXoiLz48cG9seWdvbiBjbGFzcz0ic3Q0IiBwb2ludHM9IjEyOS4xLDcyLjggMTQwLjgsNzIuOCAxNDAuOCw3Ni40IDEzMy4yLDc2LjQgMTMzLjIsNzguOCAxNDAuMSw3OC44IDE0MC4xLDgyLjIgMTMzLjIsODIuMiAxMzMuMiw4Ny41IDEyOS4xLDg3LjUiLz48cG9seWdvbiBjbGFzcz0ic3Q0IiBwb2ludHM9IjE0Ni41LDcyLjggMTUwLjYsNzIuOCAxNTAuNiw4My45IDE1Ny43LDgzLjkgMTU3LjcsODcuNSAxNDYuNSw4Ny41Ii8+PHBhdGggY2xhc3M9InN0NCIgZD0iTTE2OC4zLDcyLjdoMy45bDYuMiwxNC44aC00LjRsLTEuMS0yLjZoLTUuN2wtMSwyLjZIMTYyTDE2OC4zLDcyLjd6IE0xNzEuOCw4MS43bC0xLjYtNC4ybC0xLjcsNC4ySDE3MS44eiIvPjxwYXRoIGNsYXNzPSJzdDQiIGQ9Ik0xODMuNyw3Mi44aDYuOWMyLjIsMCwzLjgsMC42LDQuOCwxLjZjMC45LDAuOCwxLjMsMiwxLjMsMy40djBjMCwyLjItMS4yLDMuNy0zLDQuNWwzLjUsNS4xaC00LjdsLTMtNC40aC0xLjh2NC40aC00LjFWNzIuOHogTTE5MC40LDc5LjhjMS40LDAsMi4yLTAuNywyLjItMS43djBjMC0xLjItMC44LTEuNy0yLjItMS43aC0yLjd2My41SDE5MC40eiIvPjxwb2x5Z29uIGNsYXNzPSJzdDQiIHBvaW50cz0iMjAyLjUsNzIuOCAyMTQuMyw3Mi44IDIxNC4zLDc2LjMgMjA2LjYsNzYuMyAyMDYuNiw3OC41IDIxMy42LDc4LjUgMjEzLjYsODEuNyAyMDYuNiw4MS43IDIwNi42LDg0IDIxNC40LDg0IDIxNC40LDg3LjUgMjAyLjUsODcuNSIvPjxwYXRoIGNsYXNzPSJzdDQiIGQ9Ik00NC40LDgxLjljLTAuNiwxLjMtMS44LDIuMi0zLjQsMi4yYy0yLjIsMC0zLjctMS44LTMuNy00djBjMC0yLjEsMS41LTMuOSwzLjctMy45YzEuNywwLDIuOSwxLDMuNSwyLjRoNC4zYy0wLjctMy41LTMuOC02LjEtNy43LTYuMWMtNC41LDAtNy45LDMuNC03LjksNy42djBjMCw0LjIsMy4zLDcuNiw3LjksNy42YzMuOSwwLDYuOS0yLjUsNy43LTUuOUg0NC40eiIvPjwvZz48L2c+Cjwvc3ZnPg==" alt="Cloudflare" class="cf-logo">
+            </div>
+            <div class="header-title">
+                <h1>Magic Transit Dashboard</h1>
+                <span class="header-subtitle">DDoS PROTECTION & BGP MANAGEMENT</span>
+            </div>
+        </div>
+        <div class="header-center">
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>Live</span>
+            </div>
+            <span id="last-update" class="timestamp">Loading...</span>
+        </div>
+        <div class="header-right">
+            <a href="/connectors" class="refresh-btn connectors-btn" style="text-decoration: none;" title="Tunnels & Interconnects">
+                <span class="connector-status-dot" id="connector-health-dot"></span>
+                Connectors
+            </a>
+            <button class="refresh-btn" onclick="refreshAll()">↻ Refresh</button>
+            <button class="refresh-btn" onclick="showPasswordModal()" title="Change Password">⚙</button>
+            <a href="/logout" class="refresh-btn" style="text-decoration: none;">Logout</a>
+            <div class="goline-logo-container">
+                <img src="/static/images/Goline_500_160_trasparente.png" alt="GOLINE" class="goline-logo-img">
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Network Flow Stats (Cloudflare GraphQL - Real-time) -->
+        <div class="section-header">
+            <span class="section-title">📡 Network Flow (24h)</span>
+            <span class="section-desc">Real-time traffic statistics from Cloudflare</span>
+        </div>
+        <div class="stats-grid" id="network-flow-grid">
+            <div class="stat-card stat-rate" title="Average bit rate across all traffic in the last 24 hours">
+                <div class="stat-value" id="stat-avg-bps">-</div>
+                <div class="stat-label">Avg Bit Rate</div>
+                <div class="stat-desc">(last 24h)</div>
+            </div>
+            <div class="stat-card stat-rate" title="Average packet rate across all traffic in the last 24 hours">
+                <div class="stat-value" id="stat-avg-pps">-</div>
+                <div class="stat-label">Avg Packet Rate</div>
+                <div class="stat-desc">(last 24h)</div>
+            </div>
+            <div class="stat-card stat-protocol" title="Protocol with highest traffic volume in the last 24 hours">
+                <div class="stat-value stat-value-text" id="stat-top-protocol">-</div>
+                <div class="stat-label">Top Protocol</div>
+                <div class="stat-desc" id="stat-top-protocol-vol">By traffic volume</div>
+            </div>
+            <div class="stat-card stat-source" title="Source IP with highest traffic volume in the last 24 hours">
+                <div class="stat-value stat-value-text stat-value-ip" id="stat-top-source">-</div>
+                <div class="stat-label stat-label-sm">Top Source</div>
+                <div class="stat-desc stat-vol" id="stat-top-source-vol">By traffic volume</div>
+            </div>
+            <div class="stat-card stat-router" title="GOLINE router with highest traffic volume in the last 24 hours">
+                <div class="stat-value stat-value-text stat-value-ip" id="stat-top-router">-</div>
+                <div class="stat-label stat-label-sm">Top Router</div>
+                <div class="stat-desc stat-vol" id="stat-top-router-vol">By traffic volume</div>
+            </div>
+            <div class="stat-card stat-destination" title="Destination IP with highest traffic volume in the last 24 hours">
+                <div class="stat-value stat-value-text stat-value-ip" id="stat-top-destination">-</div>
+                <div class="stat-label stat-label-sm">Top Destination</div>
+                <div class="stat-desc stat-vol" id="stat-top-destination-vol">By traffic volume</div>
+            </div>
+        </div>
+
+        <!-- System Stats Grid -->
+        <div class="section-header">
+            <span class="section-title">📊 System Status</span>
+            <span class="section-desc">Local database and service statistics</span>
+        </div>
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card" title="BGP prefixes currently advertised through Cloudflare / Total prefixes configured">
+                <div class="stat-value" id="stat-prefixes">-</div>
+                <div class="stat-label">BGP Prefixes</div>
+                <div class="stat-desc">Advertised / Total</div>
+            </div>
+            <div class="stat-card" title="Total DDoS attack events recorded in the database since monitoring started">
+                <div class="stat-value" id="stat-attacks">-</div>
+                <div class="stat-label">Total Attacks</div>
+                <div class="stat-desc">All recorded events</div>
+            </div>
+            <div class="stat-card" title="Network analytics events showing dropped/mitigated traffic by Cloudflare">
+                <div class="stat-value" id="stat-analytics">-</div>
+                <div class="stat-label">Analytics Events</div>
+                <div class="stat-desc">Dropped traffic records</div>
+            </div>
+            <div class="stat-card" title="DDoS attacks detected and mitigated in the last 24 hours">
+                <div class="stat-value" id="stat-attacks-24h">-</div>
+                <div class="stat-label">Attacks (24h)</div>
+                <div class="stat-desc">Last 24 hours</div>
+            </div>
+            <div class="stat-card" title="Magic Network Monitoring rules configured for automatic BGP advertisement">
+                <div class="stat-value" id="stat-rules">-</div>
+                <div class="stat-label">MNM Rules</div>
+                <div class="stat-desc">Auto-advertisement triggers</div>
+            </div>
+            <div class="stat-card" title="Background services running: webhook receiver, analytics monitor, autowithdraw daemon">
+                <div class="stat-value" id="stat-services">-</div>
+                <div class="stat-label">Services Active</div>
+                <div class="stat-desc">Background daemons</div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid">
+            <!-- BGP Prefixes -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <span class="card-title">🌐 BGP Prefixes</span>
+                        <span class="card-description">Cloudflare-protected IP ranges with manual advertise/withdraw controls</span>
+                    </div>
+                </div>
+                <div class="card-body" id="prefixes-content">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading prefixes...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Services Status -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <span class="card-title">⚙️ Services Status</span>
+                        <span class="card-description">Background daemons for webhook processing, analytics, and auto-withdraw</span>
+                    </div>
+                </div>
+                <div class="card-body" id="services-content">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading services...
+                    </div>
+                </div>
+            </div>
+
+            <!-- DDoS Protection Log -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <span class="card-title">🛡️ DDoS Protection Log</span>
+                        <span class="card-description">Attack events, BGP announcements, and protection lifecycle</span>
+                    </div>
+                </div>
+                <div class="card-body" id="attacks-content">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading events...
+                    </div>
+                </div>
+            </div>
+
+            <!-- MNM Rules -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <span class="card-title">📋 MNM Rules</span>
+                        <span class="card-description">Magic Network Monitoring - Auto-advertisement triggers</span>
+                    </div>
+                    <a href="/mnm-rules" class="btn-header-edit" title="Manage MNM Rules">Manage →</a>
+                </div>
+                <div class="card-body" id="rules-content">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading rules...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network Analytics -->
+            <div class="card" style="grid-column: span 2;">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <div class="card-title-row">
+                            <span class="card-title">📊 Network Analytics</span>
+                            <span class="card-status" id="analytics-status">⏸️ Monitoring paused</span>
+                        </div>
+                        <span class="card-description">Traffic blocked by Cloudflare DDoS protection (dropped packets and bits)</span>
+                    </div>
+                </div>
+                <div class="card-body" id="analytics-content">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading analytics...
+                    </div>
+                </div>
+            </div>
+
+            <!-- DDoS Sensitivity -->
+            <div class="card" style="grid-column: span 2;">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <span class="card-title">🛡️ DDoS L3/4 Managed Ruleset</span>
+                        <span class="card-description">Cloudflare managed DDoS protection rules with customizable actions</span>
+                    </div>
+                    <a href="/ddos-rules" class="btn-header-edit" title="Manage DDoS Rules">Manage →</a>
+                </div>
+                <div class="card-body" id="ddos-content">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading DDoS ruleset...
+                    </div>
+                </div>
+            </div>
+
+            <!-- DDoS Custom Overrides -->
+            <div class="card" style="grid-column: span 2;">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <span class="card-title">🎯 Network-layer DDoS Protection Overrides</span>
+                        <span class="card-description">L3/4 DDoS protection rules with custom IP/protocol filters</span>
+                    </div>
+                    <button class="btn-add" onclick="showAddOverrideModal()" title="Add Override">+ Add</button>
+                </div>
+                <div class="card-body" id="ddos-overrides-content">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading custom overrides...
+                    </div>
+                </div>
+            </div>
+
+            <!-- DDoS Override Edit Modal -->
+            <div id="override-modal" class="modal">
+                <div class="modal-content" style="max-width: 600px;">
+                    <div class="modal-header">
+                        <h3 id="override-modal-title">Add Override</h3>
+                        <button class="modal-close" onclick="hideOverrideModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="override-form">
+                            <input type="hidden" id="override-id">
+                            <input type="hidden" id="override-mode" value="add">
+                            <input type="hidden" id="override-editor-mode" value="simple">
+
+                            <!-- Mode Toggle -->
+                            <div class="editor-mode-toggle">
+                                <button type="button" class="mode-btn active" id="btn-simple-mode" onclick="setEditorMode('simple')">Simple</button>
+                                <button type="button" class="mode-btn" id="btn-advanced-mode" onclick="setEditorMode('advanced')">Advanced</button>
+                            </div>
+
+                            <!-- Simple Mode -->
+                            <div id="simple-editor">
+                                <div class="form-group">
+                                    <label for="simple-description">Name *</label>
+                                    <input type="text" id="simple-description" placeholder="e.g., Mail server protection">
+                                    <div class="form-hint">A descriptive name for this rule</div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="simple-ip">Destination IP *</label>
+                                    <input type="text" id="simple-ip" placeholder="e.g., 185.54.81.5" pattern="^(\d{1,3}\.){3}\d{1,3}$">
+                                    <div class="form-hint">IPv4 address to protect</div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="simple-service">Service Type *</label>
+                                    <select id="simple-service" onchange="updateServicePreview()">
+                                        <option value="">Select service...</option>
+                                        <optgroup label="Web">
+                                            <option value="web">🌐 Web Server (HTTP/HTTPS - 80, 443)</option>
+                                            <option value="web-alt">🌐 Web Server Alt (8080, 8443)</option>
+                                            <option value="ookla-speedtest">🚀 Ookla Speedtest (8080, 5060)</option>
+                                        </optgroup>
+                                        <optgroup label="Mail">
+                                            <option value="mail-smtp">📧 SMTP (25, 465, 587)</option>
+                                            <option value="mail-imap">📧 IMAP (143, 993)</option>
+                                            <option value="mail-pop3">📧 POP3 (110, 995)</option>
+                                            <option value="mail-all">📧 Mail Server - All protocols</option>
+                                        </optgroup>
+                                        <optgroup label="DNS / Directory">
+                                            <option value="dns">🔍 DNS Server (UDP 53)</option>
+                                            <option value="dns-tcp">🔍 DNS over TCP (TCP 53)</option>
+                                            <option value="ldap">📂 LDAP (389, 636)</option>
+                                            <option value="radius">🔑 RADIUS (UDP 1812, 1813)</option>
+                                        </optgroup>
+                                        <optgroup label="VPN / Tunnel">
+                                            <option value="vpn-ipsec">🔐 IPSec (ESP protocol 50)</option>
+                                            <option value="vpn-ipsec-nat">🔐 IPSec NAT-T (UDP 4500)</option>
+                                            <option value="vpn-ike">🔐 IKE (UDP 500)</option>
+                                            <option value="vpn-wireguard">🔐 WireGuard (UDP 51820)</option>
+                                            <option value="vpn-openvpn">🔐 OpenVPN UDP (1194)</option>
+                                            <option value="vpn-openvpn-tcp">🔐 OpenVPN TCP (443)</option>
+                                            <option value="vpn-l2tp">🔐 L2TP (UDP 1701)</option>
+                                            <option value="vpn-pptp">🔐 PPTP (TCP 1723)</option>
+                                        </optgroup>
+                                        <optgroup label="VoIP / Conferencing">
+                                            <option value="voip-sip">📞 SIP (UDP 5060)</option>
+                                            <option value="voip-sip-tls">📞 SIP TLS (TCP 5061)</option>
+                                            <option value="voip-rtp">📞 RTP Media (UDP 10000-20000)</option>
+                                            <option value="teams">📞 Microsoft Teams</option>
+                                            <option value="zoom">📞 Zoom</option>
+                                        </optgroup>
+                                        <optgroup label="Remote Access">
+                                            <option value="ssh">🖥️ SSH (TCP 22)</option>
+                                            <option value="rdp">🖥️ RDP (TCP/UDP 3389)</option>
+                                            <option value="vnc">🖥️ VNC (TCP 5900-5910)</option>
+                                            <option value="telnet">🖥️ Telnet (TCP 23)</option>
+                                        </optgroup>
+                                        <optgroup label="File Transfer">
+                                            <option value="ftp">📁 FTP (TCP 20, 21)</option>
+                                            <option value="sftp">📁 SFTP (TCP 22)</option>
+                                            <option value="tftp">📁 TFTP (UDP 69)</option>
+                                            <option value="smb">📁 SMB/CIFS (TCP 445)</option>
+                                            <option value="nfs">📁 NFS (TCP/UDP 2049)</option>
+                                        </optgroup>
+                                        <optgroup label="Database">
+                                            <option value="mysql">🗄️ MySQL/MariaDB (TCP 3306)</option>
+                                            <option value="postgresql">🗄️ PostgreSQL (TCP 5432)</option>
+                                            <option value="mssql">🗄️ MS SQL Server (TCP 1433)</option>
+                                            <option value="oracle">🗄️ Oracle (TCP 1521)</option>
+                                            <option value="mongodb">🗄️ MongoDB (TCP 27017)</option>
+                                            <option value="redis">🗄️ Redis (TCP 6379)</option>
+                                            <option value="elasticsearch">🗄️ Elasticsearch (TCP 9200, 9300)</option>
+                                        </optgroup>
+                                        <optgroup label="Monitoring / Management">
+                                            <option value="snmp">📊 SNMP (UDP 161, 162)</option>
+                                            <option value="syslog">📊 Syslog (UDP 514)</option>
+                                            <option value="ntp">🕐 NTP (UDP 123)</option>
+                                            <option value="icmp">📡 ICMP (Ping)</option>
+                                            <option value="zabbix">📊 Zabbix (TCP 10050, 10051)</option>
+                                            <option value="prometheus">📊 Prometheus (TCP 9090)</option>
+                                            <option value="netflow">📊 NetFlow/sFlow (UDP 2055, 6343, 9995)</option>
+                                            <option value="ipmi">📊 IPMI/BMC (UDP 623)</option>
+                                        </optgroup>
+                                        <optgroup label="Backup & Storage">
+                                            <option value="veeam">💾 Veeam Backup (TCP 6160, 6162, 9401)</option>
+                                            <option value="iscsi">💾 iSCSI (TCP 3260)</option>
+                                        </optgroup>
+                                        <optgroup label="Directory & Identity">
+                                            <option value="kerberos">🔐 Kerberos (TCP 88)</option>
+                                            <option value="ldap-gc">🔐 LDAP Global Catalog (TCP 3268, 3269)</option>
+                                            <option value="tacacs">🔐 TACACS+ (TCP 49)</option>
+                                        </optgroup>
+                                        <optgroup label="Virtualization & DevOps">
+                                            <option value="kubernetes">☸️ Kubernetes API (TCP 6443)</option>
+                                            <option value="docker-registry">🐳 Docker Registry (TCP 5000)</option>
+                                            <option value="vmware">🖥️ VMware vCenter (TCP 443, 902)</option>
+                                            <option value="esxi">🖥️ VMware ESXi (TCP 443, 902, 903)</option>
+                                            <option value="citrix">🖥️ Citrix ICA/HDX (TCP 1494, 2598)</option>
+                                            <option value="proxmox">🖥️ Proxmox VE (TCP 8006)</option>
+                                        </optgroup>
+                                        <optgroup label="Network Infrastructure">
+                                            <option value="bgp">🌐 BGP (TCP 179)</option>
+                                        </optgroup>
+                                        <optgroup label="Industrial / IoT">
+                                            <option value="modbus">🏭 Modbus TCP (502)</option>
+                                            <option value="bacnet">🏭 BACnet (UDP 47808)</option>
+                                            <option value="opcua">🏭 OPC UA (TCP 4840)</option>
+                                        </optgroup>
+                                        <optgroup label="Gaming">
+                                            <option value="minecraft">🎮 Minecraft (TCP 25565)</option>
+                                            <option value="steam">🎮 Steam (UDP 27015-27030)</option>
+                                            <option value="teamspeak">🎮 TeamSpeak (UDP 9987)</option>
+                                            <option value="discord">🎮 Discord Voice (UDP 50000-65535)</option>
+                                        </optgroup>
+                                        <optgroup label="Generic">
+                                            <option value="tcp-all">🔷 All TCP traffic</option>
+                                            <option value="udp-all">🔷 All UDP traffic</option>
+                                            <option value="all">🔷 All traffic (IP only)</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="simple-sensitivity">Sensitivity Level</label>
+                                    <select id="simple-sensitivity">
+                                        <option value="default">🔴 High (most aggressive)</option>
+                                        <option value="medium">🟡 Medium (balanced)</option>
+                                        <option value="low" selected>🟢 Low (less aggressive)</option>
+                                        <option value="eoff">⚪ Essentially Off</option>
+                                    </select>
+                                    <div class="form-hint">Lower = less false positives, but less protection</div>
+                                </div>
+
+                                <!-- Preview Box -->
+                                <div class="preview-box" id="simple-preview" style="display: none;">
+                                    <div class="preview-title">📋 Generated Configuration</div>
+                                    <div class="preview-row">
+                                        <span class="preview-label">Expression:</span>
+                                        <code id="preview-expression"></code>
+                                    </div>
+                                    <div class="preview-row">
+                                        <span class="preview-label">Target Rule:</span>
+                                        <span id="preview-rule"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Advanced Mode -->
+                            <div id="advanced-editor" style="display: none;">
+                                <div class="form-group">
+                                    <label for="override-description">Name *</label>
+                                    <input type="text" id="override-description" placeholder="e.g., Mail server protection">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="override-expression">Expression *</label>
+                                    <textarea id="override-expression" rows="3" placeholder="e.g., ip.dst eq 185.54.80.30 and tcp.dstport in {25 465 587}"></textarea>
+                                    <div class="form-hint">
+                                        Wirefilter syntax: <code>ip.dst</code>, <code>tcp.dstport</code>, <code>udp.dstport</code>, <code>ip.proto.num</code>
+                                    </div>
+                                    <div id="expression-validation" class="validation-message"></div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="override-sensitivity">Sensitivity</label>
+                                        <select id="override-sensitivity">
+                                            <option value="default">High</option>
+                                            <option value="medium">Medium</option>
+                                            <option value="low" selected>Low</option>
+                                            <option value="eoff">Essentially Off</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="override-target">Target Rule *</label>
+                                        <select id="override-target">
+                                            <option value="">Select rule...</option>
+                                            <optgroup label="TCP">
+                                                <option value="9da0fb429a25436fa543519f4570f19f">TCP-0001: TCP SYN flood</option>
+                                                <option value="6efeb57a52e744e89a5413121bd0b3d3">TCP-0002: TCP ACK flood</option>
+                                            </optgroup>
+                                            <optgroup label="UDP">
+                                                <option value="599dab0942ff4898ac1b7797e954e98b">UDP-0001: UDP flood</option>
+                                                <option value="520f5ecec28844ca971a8b3f9c425c26">DNS-0002: DNS flood</option>
+                                                <option value="afd7c2341e974f1c985c338934228119">UDP4-0002: SIP traffic</option>
+                                            </optgroup>
+                                            <optgroup label="ESP/IPSec">
+                                                <option value="89bd10e19f974b9ba3784db068c2fd70">ESP4-0001: IPv4 ESP</option>
+                                                <option value="63996ad8353d42e08188bd6bdcd96fe2">ESP6-0001: IPv6 ESP</option>
+                                            </optgroup>
+                                            <optgroup label="Enterprise">
+                                                <option value="90c9e55497724742b60f603fe4e7541c">ENT-0004: Adaptive ESP</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="override-enabled" checked>
+                                    <span>Enabled</span>
+                                </label>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-cancel" onclick="hideOverrideModal()">Cancel</button>
+                        <button type="button" class="btn-validate" id="btn-validate" onclick="validateExpression()" style="display: none;">Validate</button>
+                        <button type="button" class="btn-save" onclick="saveOverride()">Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Confirmation Modal -->
+            <div id="delete-override-modal" class="modal">
+                <div class="modal-content" style="max-width: 450px;">
+                    <div class="modal-header">
+                        <h3>⚠️ Delete Override</h3>
+                        <button class="modal-close" onclick="hideDeleteOverrideModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to delete this override?</p>
+                        <p><strong id="delete-override-name"></strong></p>
+                        <p class="warning-text">This action cannot be undone.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-cancel" onclick="hideDeleteOverrideModal()">Cancel</button>
+                        <button type="button" class="btn-delete" onclick="confirmDeleteOverride()">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <img src="/static/images/Goline_500_160_trasparente.png" alt="GOLINE">
+                <span class="footer-text">GOLINE SOC · Magic Transit Dashboard v{{ version }}</span>
+            </div>
+            <div class="footer-right">
+                <span class="footer-dot"></span>
+                <span>Auto-refresh 30s</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const API_BASE = '';
+        let refreshInterval;
+
+        // Format timestamp
+        function formatTime(timestamp) {
+            if (!timestamp) return '-';
+            const date = new Date(timestamp);
+            return date.toLocaleString('it-IT', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+        }
+
+        // Format relative time
+        function formatRelative(timestamp) {
+            if (!timestamp) return '-';
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000);
+
+            if (diff < 60) return `${diff}s ago`;
+            if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+            if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+            return `${Math.floor(diff/86400)}d ago`;
+        }
+
+        // Format bits rate (bps)
+        function formatBits(bits) {
+            if (!bits) return '0';
+            if (bits >= 1e9) return (bits/1e9).toFixed(2) + ' Gbps';
+            if (bits >= 1e6) return (bits/1e6).toFixed(2) + ' Mbps';
+            if (bits >= 1e3) return (bits/1e3).toFixed(2) + ' Kbps';
+            return bits + ' bps';
+        }
+
+        // Format bits to Bytes volume (KB, MB, GB, TB)
+        function formatVolume(bits) {
+            if (!bits) return '0 B';
+            const bytes = bits / 8;
+            if (bytes >= 1e12) return (bytes/1e12).toFixed(2) + ' TB';
+            if (bytes >= 1e9) return (bytes/1e9).toFixed(2) + ' GB';
+            if (bytes >= 1e6) return (bytes/1e6).toFixed(2) + ' MB';
+            if (bytes >= 1e3) return (bytes/1e3).toFixed(2) + ' KB';
+            return bytes.toFixed(0) + ' B';
+        }
+
+        // Format packets
+        function formatPackets(packets) {
+            if (!packets) return '0';
+            if (packets >= 1e6) return (packets/1e6).toFixed(2) + 'M';
+            if (packets >= 1e3) return (packets/1e3).toFixed(2) + 'K';
+            return packets.toString();
+        }
+
+        // Fetch with error handling
+        async function fetchAPI(endpoint) {
+            try {
+                const response = await fetch(API_BASE + endpoint);
+                return await response.json();
+            } catch (error) {
+                console.error(`Error fetching ${endpoint}:`, error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Prefix Action (Advertise/Withdraw)
+        async function prefixAction(cidrEncoded, action) {
+            const cidr = decodeURIComponent(cidrEncoded);
+            const actionText = action === 'advertise' ? 'ADVERTISE' : 'WITHDRAW';
+
+            // Confirm action
+            if (!confirm(`Are you sure you want to ${actionText} prefix ${cidr}?`)) {
+                return;
+            }
+
+            // Find and disable the button
+            const buttons = document.querySelectorAll('.btn-action');
+            buttons.forEach(btn => {
+                if (btn.onclick && btn.onclick.toString().includes(cidrEncoded)) {
+                    btn.classList.add('loading');
+                    btn.disabled = true;
+                }
+            });
+
+            try {
+                const response = await fetch(`${API_BASE}/api/prefix/${cidrEncoded}/${action}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Show success message
+                    alert(`✅ ${data.message}`);
+                    // Refresh the prefixes list
+                    await loadPrefixes();
+                } else {
+                    // Show error with time remaining if applicable
+                    if (data.remaining_seconds) {
+                        const mins = Math.floor(data.remaining_seconds / 60);
+                        const secs = Math.floor(data.remaining_seconds % 60);
+                        alert(`⏱️ ${data.error}\n\nPlease wait ${mins}m ${secs}s before trying again.`);
+                    } else {
+                        alert(`❌ Error: ${data.error}`);
+                    }
+                    // Refresh to restore button states
+                    await loadPrefixes();
+                }
+            } catch (error) {
+                alert(`❌ Network error: ${error.message}`);
+                // Refresh to restore button states
+                await loadPrefixes();
+            }
+        }
+
+        // Human-readable Alert Type mapping
+        function formatAlertType(alertType) {
+            const mapping = {
+                'dashboard_manual': 'Dashboard (Manual)',
+                'autowithdraw_daemon': 'Auto-Withdraw Daemon',
+                'prefix_manager_manual': 'Prefix Manager (CLI)',
+                'dos_attack_l4': 'L4 DDoS Attack',
+                'dos_attack_l7': 'L7 DDoS Attack',
+                'advanced_ddos_attack_l4_alert': 'Advanced L4 DDoS',
+                'fbm_dosd_attack': 'MNM DDoS Attack',
+                'fbm_volumetric_attack': 'MNM Volumetric Attack',
+                'fbm_auto_advertisement': 'MNM Auto-Advertise',
+                'magic_tunnel_health_check_event': 'Tunnel Health Check',
+                'health_check_status_notification': 'Health Check',
+                'incident_alert': 'Cloudflare Incident',
+                'bgp_hijack_notification': 'BGP Hijack Alert'
+            };
+            return mapping[alertType] || alertType || '-';
+        }
+
+        // Human-readable Action mapping
+        function formatAction(action) {
+            const mapping = {
+                'withdrawn_manual': 'Withdrawn (Manual)',
+                'withdrawn_auto': 'Withdrawn (Auto)',
+                'withdrawn_immediate': 'Withdrawn (Immediate)',
+                'notified': 'Notified',
+                'notified_autowithdraw_handles': 'Notified (Auto-Withdraw)',
+                'mitigating': '🛡️ Mitigating',
+                'auto_advertised': '📡 Auto-Advertised',
+                'processing': 'Processing',
+                'advertised': 'Advertised',
+                'advertised_manual': 'Advertised (Manual)',
+                'received': 'Received',
+                'imported': 'Imported'
+            };
+            return mapping[action] || action || '-';
+        }
+
+        function formatEventType(eventType) {
+            // Returns {label, badgeClass} for user-friendly display
+            const mapping = {
+                'START': { label: '🚨 ATTACK', badgeClass: 'badge-danger' },
+                'END': { label: '✅ ENDED', badgeClass: 'badge-success' },
+                'ADVERTISE': { label: '📡 ADVERTISE', badgeClass: 'badge-warning' },
+                'WITHDRAW': { label: '📤 WITHDRAW', badgeClass: 'badge-info' }
+            };
+            return mapping[eventType] || { label: eventType, badgeClass: 'badge-secondary' };
+        }
+
+        // Load Stats
+        async function loadStats() {
+            const data = await fetchAPI('/api/stats');
+            if (data.success) {
+                document.getElementById('stat-attacks').textContent = data.stats.total_attacks;
+                document.getElementById('stat-analytics').textContent = data.stats.total_analytics;
+                document.getElementById('stat-attacks-24h').textContent = data.stats.attacks_24h;
+            }
+        }
+
+        // Format large numbers with suffix
+        function formatNumber(num) {
+            if (!num || num === 0) return '0';
+            if (num >= 1e12) return (num / 1e12).toFixed(1) + 'T';
+            if (num >= 1e9) return (num / 1e9).toFixed(1) + 'G';
+            if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
+            if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+            return num.toString();
+        }
+
+        // Load Network Flow Stats
+        async function loadNetworkFlow() {
+            const data = await fetchAPI('/api/network-flow');
+            if (data.success) {
+                const flow = data.network_flow;
+                document.getElementById('stat-avg-bps').textContent = (flow.avg_bit_rate / 1e6).toFixed(2) + ' Mbps';
+                document.getElementById('stat-avg-pps').textContent = (flow.avg_packet_rate / 1e3).toFixed(1) + ' kpps';
+                document.getElementById('stat-top-protocol').textContent = flow.top_protocol || '-';
+                document.getElementById('stat-top-protocol-vol').textContent = formatVolume(flow.top_protocol_bits);
+                document.getElementById('stat-top-source').textContent = flow.top_source || '-';
+                document.getElementById('stat-top-source-vol').textContent = formatVolume(flow.top_source_bits);
+                document.getElementById('stat-top-router').textContent = flow.top_router || '-';
+                document.getElementById('stat-top-router-vol').textContent = formatVolume(flow.top_router_bits);
+                document.getElementById('stat-top-destination').textContent = flow.top_destination || '-';
+                document.getElementById('stat-top-destination-vol').textContent = formatVolume(flow.top_destination_bits);
+            } else {
+                // Show error state
+                document.getElementById('stat-avg-bps').textContent = '!';
+                document.getElementById('stat-avg-pps').textContent = '!';
+                document.getElementById('stat-top-protocol').textContent = 'Error';
+                document.getElementById('stat-top-protocol-vol').textContent = '-';
+                document.getElementById('stat-top-source').textContent = 'Error';
+                document.getElementById('stat-top-source-vol').textContent = '-';
+                document.getElementById('stat-top-router').textContent = 'Error';
+                document.getElementById('stat-top-router-vol').textContent = '-';
+                document.getElementById('stat-top-destination').textContent = 'Error';
+                document.getElementById('stat-top-destination-vol').textContent = '-';
+            }
+        }
+
+        // Load Prefixes
+        async function loadPrefixes() {
+            const data = await fetchAPI('/api/prefixes');
+            const container = document.getElementById('prefixes-content');
+
+            if (!data.success) {
+                container.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                return;
+            }
+
+            let html = '';
+            let advertisedCount = 0;
+
+            data.prefixes.forEach(prefix => {
+                const isAdvertised = prefix.advertised === true;
+                if (isAdvertised) advertisedCount++;
+
+                const badgeClass = isAdvertised ? 'badge-danger' : 'badge-success';
+                const badgeText = isAdvertised ? 'ADVERTISED' : 'WITHDRAWN';
+                const cidrEncoded = encodeURIComponent(prefix.cidr);
+
+                // Calculate 15-minute constraint from API
+                let constraintHtml = '';
+                let remainingMin = 0;
+                if (prefix.advertised_modified_at) {
+                    const modifiedAt = new Date(prefix.advertised_modified_at);
+                    const now = new Date();
+                    const elapsedMin = (now - modifiedAt) / 1000 / 60;
+                    remainingMin = Math.max(0, 15 - elapsedMin);
+
+                    if (remainingMin > 0) {
+                        const action = isAdvertised ? 'withdraw' : 'advertise';
+                        constraintHtml = `<div class="calm-status constraint">⏱️ Can ${action} in ${remainingMin.toFixed(1)} min</div>`;
+                    } else {
+                        const action = isAdvertised ? 'withdraw' : 'advertise';
+                        constraintHtml = `<div class="calm-status ready">✅ Can ${action} now</div>`;
+                    }
+                }
+
+                // Calm status info for advertised prefixes (from autowithdraw daemon)
+                let calmStatusHtml = '';
+                if (isAdvertised && prefix.under_attack !== null) {
+                    if (prefix.under_attack) {
+                        calmStatusHtml = `<div class="calm-status attack">⚠️ Under attack (${prefix.dropped_mbps || 0} Mbps)</div>`;
+                    } else if (prefix.calm_minutes > 0) {
+                        const calmMin = prefix.calm_minutes.toFixed(1);
+                        const autoWithdrawMin = prefix.time_to_withdraw.toFixed(1);
+                        if (prefix.time_to_withdraw > 0) {
+                            calmStatusHtml = `<div class="calm-status calm">✅ Calm ${calmMin} min • Auto-withdraw in ${autoWithdrawMin} min</div>`;
+                        } else {
+                            calmStatusHtml = `<div class="calm-status ready">⏳ Waiting for auto-withdraw (${calmMin} min calm)</div>`;
+                        }
+                    } else {
+                        calmStatusHtml = `<div class="calm-status waiting">⏳ Monitoring for attacks...</div>`;
+                    }
+                }
+
+                // Button disabled logic based on state AND constraint timer
+                const constraintActive = remainingMin > 0;
+                const advertiseDisabled = isAdvertised || (!isAdvertised && constraintActive);
+                const withdrawDisabled = !isAdvertised || (isAdvertised && constraintActive);
+
+                // Button titles
+                let advertiseTitle = isAdvertised ? 'Already advertised' :
+                                     constraintActive ? `Wait ${remainingMin.toFixed(1)} min (Cloudflare constraint)` :
+                                     'Advertise this prefix';
+                let withdrawTitle = !isAdvertised ? 'Already withdrawn' :
+                                    constraintActive ? `Wait ${remainingMin.toFixed(1)} min (Cloudflare constraint)` :
+                                    'Withdraw this prefix';
+
+                html += `
+                    <div class="prefix-row">
+                        <div class="prefix-info">
+                            <span class="prefix-cidr">${prefix.cidr}</span>
+                            <span class="prefix-desc">${prefix.description}</span>
+                            ${constraintHtml}
+                            ${calmStatusHtml}
+                            <div class="prefix-actions">
+                                <button class="btn-action btn-advertise"
+                                        onclick="prefixAction('${cidrEncoded}', 'advertise')"
+                                        ${advertiseDisabled ? 'disabled' : ''}
+                                        title="${advertiseTitle}">
+                                    ▲ Advertise
+                                </button>
+                                <button class="btn-action btn-withdraw"
+                                        onclick="prefixAction('${cidrEncoded}', 'withdraw')"
+                                        ${withdrawDisabled ? 'disabled' : ''}
+                                        title="${withdrawTitle}">
+                                    ▼ Withdraw
+                                </button>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span class="badge ${badgeClass}">${badgeText}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html || '<div class="loading">No prefixes found</div>';
+            const statPrefixes = document.getElementById('stat-prefixes');
+            statPrefixes.textContent = `${advertisedCount}/${data.prefixes.length}`;
+            // Red color when prefixes are advertised (attack in progress)
+            statPrefixes.style.color = advertisedCount > 0 ? '#ef4444' : '';
+
+            // Update global state for other functions (e.g., loadAnalytics)
+            globalAdvertisedCount = advertisedCount;
+            globalTotalPrefixes = data.prefixes.length;
+
+            // Update Network Analytics status based on prefix status
+            const analyticsStatus = document.getElementById('analytics-status');
+            if (analyticsStatus) {
+                if (advertisedCount === 0) {
+                    analyticsStatus.innerHTML = '⏸️ Paused - all prefixes withdrawn';
+                    analyticsStatus.style.color = 'var(--text-secondary)';
+                } else {
+                    analyticsStatus.innerHTML = `✅ Active - ${advertisedCount} prefix(es) via Cloudflare`;
+                    analyticsStatus.style.color = 'var(--accent-green)';
+                }
+            }
+        }
+
+        // Load Services
+        async function loadServices() {
+            const data = await fetchAPI('/api/services');
+            const container = document.getElementById('services-content');
+
+            if (!data.success) {
+                container.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                return;
+            }
+
+            let html = '';
+            let activeCount = 0;
+
+            data.services.forEach(service => {
+                const isActive = service.status === 'active';
+                if (isActive) activeCount++;
+
+                const badgeClass = isActive ? 'badge-success' : 'badge-danger';
+                const uptime = service.uptime ? formatRelative(service.uptime) : '';
+
+                html += `
+                    <div class="service-row">
+                        <span class="service-name" title="${service.name}">${service.description || service.name}</span>
+                        <div style="text-align: right;">
+                            <span class="badge ${badgeClass}">${service.status.toUpperCase()}</span>
+                            ${isActive && uptime ? `<div class="timestamp" style="margin-top: 4px;">since ${uptime}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html || '<div class="loading">No services found</div>';
+            document.getElementById('stat-services').textContent = `${activeCount}/${data.services.length}`;
+        }
+
+        // Load Attacks
+        async function loadAttacks() {
+            const data = await fetchAPI('/api/attacks');
+            const container = document.getElementById('attacks-content');
+
+            if (!data.success) {
+                container.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                return;
+            }
+
+            if (data.attacks.length === 0) {
+                container.innerHTML = '<div class="loading">No events recorded</div>';
+                return;
+            }
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Event</th>
+                            <th>Prefix</th>
+                            <th>Alert Type</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.attacks.forEach(attack => {
+                const eventFormat = formatEventType(attack.event_type);
+
+                html += `
+                    <tr class="attack-row" data-id="${attack.id}" ondblclick="showAttackDetail(${attack.id})" title="Double-click for details">
+                        <td class="timestamp">${formatRelative(attack.timestamp)}</td>
+                        <td><span class="badge ${eventFormat.badgeClass}">${eventFormat.label}</span></td>
+                        <td class="ip-mono">${attack.prefix || '-'}</td>
+                        <td class="truncate" title="${attack.alert_type || ''}">${formatAlertType(attack.alert_type)}</td>
+                        <td>${formatAction(attack.action_taken)}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Load Analytics
+        async function loadAnalytics() {
+            const data = await fetchAPI('/api/analytics');
+            const container = document.getElementById('analytics-content');
+
+            if (!data.success) {
+                container.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                return;
+            }
+
+            if (data.events.length === 0) {
+                container.innerHTML = '<div class="loading">No analytics events recorded</div>';
+                return;
+            }
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Attack Vector</th>
+                            <th>Source IP</th>
+                            <th>Country</th>
+                            <th>Dest IP</th>
+                            <th>Port</th>
+                            <th>Packets</th>
+                            <th>Bits</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.events.slice(0, 20).forEach(event => {
+                html += `
+                    <tr class="analytics-row" data-id="${event.id}" ondblclick="showAnalyticsDetail(${event.id})" title="Double-click for details">
+                        <td class="timestamp">${formatRelative(event.event_datetime)}</td>
+                        <td><span class="badge badge-warning">${event.attack_vector || '-'}</span></td>
+                        <td class="ip-mono">${event.source_ip || '-'}</td>
+                        <td>${event.source_country || '-'}</td>
+                        <td class="ip-mono">${event.dest_ip || '-'}</td>
+                        <td>${event.dest_port || '-'}</td>
+                        <td>${formatPackets(event.packets_dropped)}</td>
+                        <td>${formatBits(event.bits_dropped)}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Global storage for MNM rules data
+        let mnmRulesData = [];
+
+        // Global storage for BGP prefix status (updated by loadPrefixes)
+        let globalAdvertisedCount = 0;
+        let globalTotalPrefixes = 0;
+
+        // Load Rules
+        async function loadRules() {
+            const data = await fetchAPI('/api/rules');
+            const container = document.getElementById('rules-content');
+
+            if (!data.success) {
+                container.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                return;
+            }
+
+            let html = '';
+            let totalRules = 0;
+            mnmRulesData = []; // Reset storage
+
+            // Threshold rules (BPS/PPS)
+            if (data.rules.threshold && data.rules.threshold.length > 0) {
+                html += '<div class="rule-category"><div class="rule-category-title">Threshold Rules (BPS/PPS)</div>';
+                data.rules.threshold.forEach(rule => {
+                    const ruleIndex = mnmRulesData.length;
+                    const ruleType = rule.bandwidth_threshold ? 'bps' : 'pps';
+                    mnmRulesData.push({ ...rule, type: ruleType });
+                    totalRules++;
+                    const threshold = rule.bandwidth_threshold ?
+                        `${(rule.bandwidth_threshold/1e9).toFixed(0)} Gbps` :
+                        `${(rule.packet_threshold/1e3).toFixed(0)}K pps`;
+                    html += `
+                        <div class="rule-item rule-item-clickable" ondblclick="showMnmRuleEdit(${ruleIndex})" title="Double-click to edit">
+                            <span>${rule.name || rule.prefixes.join(', ')}</span>
+                            <span class="badge badge-info">${threshold}</span>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            // Advanced DDoS rules (sFlow)
+            if (data.rules.advanced_ddos && data.rules.advanced_ddos.length > 0) {
+                html += '<div class="rule-category"><div class="rule-category-title">Advanced DDoS (sFlow)</div>';
+                data.rules.advanced_ddos.forEach(rule => {
+                    const ruleIndex = mnmRulesData.length;
+                    mnmRulesData.push({ ...rule, type: 'sflow' });
+                    totalRules++;
+                    html += `
+                        <div class="rule-item rule-item-clickable" ondblclick="showMnmRuleEdit(${ruleIndex})" title="Double-click to edit">
+                            <span>${rule.name || rule.prefixes.join(', ')}</span>
+                            <span class="badge badge-purple">sFlow</span>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            // ZScore rules
+            if (data.rules.zscore && data.rules.zscore.length > 0) {
+                html += '<div class="rule-category"><div class="rule-category-title">Dynamic Rules (ZScore)</div>';
+                data.rules.zscore.forEach(rule => {
+                    const ruleIndex = mnmRulesData.length;
+                    mnmRulesData.push({ ...rule, type: 'zscore' });
+                    totalRules++;
+                    html += `
+                        <div class="rule-item rule-item-clickable" ondblclick="showMnmRuleEdit(${ruleIndex})" title="Double-click to edit">
+                            <span>${rule.name || rule.prefixes.join(', ')}</span>
+                            <span class="badge badge-warning">ZScore</span>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            container.innerHTML = html || '<div class="loading">No rules configured</div>';
+            document.getElementById('stat-rules').textContent = totalRules;
+        }
+
+        // Load DDoS Sensitivity
+        async function loadDDoS() {
+            const data = await fetchAPI('/api/ddos-sensitivity');
+            const container = document.getElementById('ddos-content');
+
+            if (!data.success) {
+                container.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                return;
+            }
+
+            const blockCount = data.action_counts.block || 0;
+            const dynamicCount = data.action_counts.ddos_dynamic || 0;
+            const logCount = data.action_counts.log || 0;
+
+            let html = `
+                <div class="ddos-grid">
+                    <a href="/ddos-rules" class="ddos-card ddos-clickable">
+                        <div class="ddos-value">${data.total_rules}</div>
+                        <div class="ddos-label">Total Rules</div>
+                    </a>
+                    <a href="/ddos-rules/block" class="ddos-card ddos-block ddos-clickable">
+                        <div class="ddos-value">${blockCount}</div>
+                        <div class="ddos-label">Block</div>
+                        <div class="ddos-desc">Immediate drop</div>
+                    </a>
+                    <a href="/ddos-rules/ddos_dynamic" class="ddos-card ddos-dynamic ddos-clickable">
+                        <div class="ddos-value">${dynamicCount}</div>
+                        <div class="ddos-label">Dynamic</div>
+                        <div class="ddos-desc">Auto-adjust</div>
+                    </a>
+                    <a href="/ddos-rules/log" class="ddos-card ddos-log ddos-clickable">
+                        <div class="ddos-value">${logCount}</div>
+                        <div class="ddos-label">Log</div>
+                        <div class="ddos-desc">Monitor only</div>
+                    </a>
+                </div>
+                <div class="ddos-footer">
+                    <span class="ddos-ruleset">${data.ruleset_name}</span>
+                    <span class="timestamp">Updated: ${formatRelative(data.last_updated)}</span>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Load DDoS Custom Overrides
+        // Store overrides data for editing
+        let currentOverrides = [];
+
+        async function loadDDoSOverrides() {
+            const data = await fetchAPI('/api/ddos-overrides');
+            const container = document.getElementById('ddos-overrides-content');
+
+            if (!data.success) {
+                container.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                return;
+            }
+
+            currentOverrides = data.overrides || [];
+
+            if (data.total === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span style="font-size: 1.5rem;">🎯</span>
+                        <p>No custom overrides configured</p>
+                        <p class="empty-hint">Click "+ Add" to create a new override rule</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Map sensitivity levels to human-readable labels
+            const sensitivityLabels = {
+                'default': 'High',
+                'medium': 'Medium',
+                'low': 'Low',
+                'eoff': 'Essentially Off'
+            };
+
+            const sensitivityColors = {
+                'default': 'var(--accent-red)',
+                'medium': 'var(--accent-yellow)',
+                'low': 'var(--accent-green)',
+                'eoff': 'var(--accent-purple)'
+            };
+
+            // Map rule IDs to names
+            const ruleNames = {
+                '9da0fb429a25436fa543519f4570f19f': 'TCP-0001',
+                '6efeb57a52e744e89a5413121bd0b3d3': 'TCP-0002',
+                '599dab0942ff4898ac1b7797e954e98b': 'UDP-0001',
+                '520f5ecec28844ca971a8b3f9c425c26': 'DNS-0002',
+                'afd7c2341e974f1c985c338934228119': 'SIP-0002',
+                '89bd10e19f974b9ba3784db068c2fd70': 'ESP4-0001',
+                '63996ad8353d42e08188bd6bdcd96fe2': 'ESP6-0001',
+                'cdc6573a5b60439d80eb792d70534fe6': 'UDP4-0001',
+                'c2671098563b405a8b0600f550d7ad86': 'UDP6-0001',
+                '90c9e55497724742b60f603fe4e7541c': 'ENT-0004',
+                'f526ae90584b401d8d7dd9f4938e978c': 'ENT-0005'
+            };
+
+            let html = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 60px;">Order</th>
+                            <th>Name</th>
+                            <th>Expression</th>
+                            <th>Target Rule</th>
+                            <th>Sensitivity</th>
+                            <th>Status</th>
+                            <th style="width: 120px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            const totalOverrides = data.overrides.length;
+            for (let i = 0; i < data.overrides.length; i++) {
+                const override = data.overrides[i];
+                const sensitivity = override.sensitivity_level || 'default';
+                const sensitivityLabel = sensitivityLabels[sensitivity] || sensitivity;
+                const sensitivityColor = sensitivityColors[sensitivity] || 'var(--text-secondary)';
+                const targetRuleName = ruleNames[override.target_rule_id] || override.target_rule_id || '-';
+                const statusBadge = override.enabled
+                    ? '<span class="badge badge-success">Enabled</span>'
+                    : '<span class="badge badge-warning">Disabled</span>';
+
+                const overrideData = encodeURIComponent(JSON.stringify(override));
+
+                // Order arrows - disable at boundaries
+                const upDisabled = i === 0 ? 'disabled' : '';
+                const downDisabled = i === totalOverrides - 1 ? 'disabled' : '';
+                const position = i + 1; // 1-based position
+
+                html += `
+                    <tr data-override-id="${override.id}">
+                        <td class="order-cell">
+                            <button class="btn-order" onclick="moveOverrideUp('${override.id}')" title="Move Up" ${upDisabled}>▲</button>
+                            <input type="number" class="order-input" value="${position}" min="1" max="${totalOverrides}"
+                                   onchange="moveOverrideToPosition('${override.id}', this.value)"
+                                   onclick="this.select()" title="Enter position (1-${totalOverrides})">
+                            <button class="btn-order" onclick="moveOverrideDown('${override.id}')" title="Move Down" ${downDisabled}>▼</button>
+                        </td>
+                        <td><strong>${override.description || 'No name'}</strong></td>
+                        <td><code class="expression-code">${override.expression}</code></td>
+                        <td><span class="badge badge-info">${targetRuleName}</span></td>
+                        <td><span class="sensitivity-badge" style="background: ${sensitivityColor};">${sensitivityLabel}</span></td>
+                        <td>${statusBadge}</td>
+                        <td class="actions-cell">
+                            <button class="btn-edit-small" onclick="showEditOverrideModal('${override.id}')" title="Edit">Edit</button>
+                            <button class="btn-delete-small" onclick="showDeleteOverrideModal('${override.id}', '${(override.description || '').replace(/'/g, "\\'")}')" title="Delete">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            html += `
+                    </tbody>
+                </table>
+                <div class="ddos-footer">
+                    <span class="ddos-ruleset">${data.total} custom override${data.total !== 1 ? 's' : ''}</span>
+                    <span class="timestamp">Updated: ${formatRelative(data.last_updated)}</span>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Service Configuration for Simple Mode
+        const serviceConfig = {
+            // Web
+            'web': {
+                name: 'Web Server',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport in {80 443}`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'web-alt': {
+                name: 'Web Server Alt',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport in {8080 8443}`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'ookla-speedtest': {
+                name: 'Ookla Speedtest',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport in {8080 5060}`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            // Mail
+            'mail-smtp': {
+                name: 'SMTP',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport in {25 465 587}`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'mail-imap': {
+                name: 'IMAP',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport in {143 993}`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'mail-pop3': {
+                name: 'POP3',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport in {110 995}`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'mail-all': {
+                name: 'Mail Server',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport in {25 110 143 465 587 993 995}`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            // DNS / Directory
+            'dns': {
+                name: 'DNS UDP',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport eq 53`,
+                targetRule: '520f5ecec28844ca971a8b3f9c425c26',
+                targetName: 'DNS-0002: DNS flood'
+            },
+            'dns-tcp': {
+                name: 'DNS TCP',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 53`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'ldap': {
+                name: 'LDAP',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport in {389 636}`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'radius': {
+                name: 'RADIUS',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport in {1812 1813}`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            // VPN / Tunnel
+            'vpn-ipsec': {
+                name: 'IPSec ESP',
+                expression: (ip) => `ip.dst eq ${ip} and ip.proto.num eq 50`,
+                targetRule: '89bd10e19f974b9ba3784db068c2fd70',
+                targetName: 'ESP4-0001: IPv4 ESP'
+            },
+            'vpn-ipsec-nat': {
+                name: 'IPSec NAT-T',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport eq 4500`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            'vpn-ike': {
+                name: 'IKE',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport eq 500`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            'vpn-wireguard': {
+                name: 'WireGuard',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport eq 51820`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            'vpn-openvpn': {
+                name: 'OpenVPN UDP',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport eq 1194`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            'vpn-openvpn-tcp': {
+                name: 'OpenVPN TCP',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 443`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'vpn-l2tp': {
+                name: 'L2TP',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport eq 1701`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            'vpn-pptp': {
+                name: 'PPTP',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 1723`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            // VoIP / Conferencing
+            'voip-sip': {
+                name: 'SIP',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport eq 5060`,
+                targetRule: 'afd7c2341e974f1c985c338934228119',
+                targetName: 'UDP4-0002: SIP traffic'
+            },
+            'voip-sip-tls': {
+                name: 'SIP TLS',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 5061`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'voip-rtp': {
+                name: 'RTP Media',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport ge 10000 and udp.dstport le 20000`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            'teams': {
+                name: 'Microsoft Teams',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport in {3478 3479 3480 3481}`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            'zoom': {
+                name: 'Zoom',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport in {8801 8802}`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            // Remote Access
+            'ssh': {
+                name: 'SSH',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 22`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'rdp': {
+                name: 'RDP',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 3389`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'vnc': {
+                name: 'VNC',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport ge 5900 and tcp.dstport le 5910`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'telnet': {
+                name: 'Telnet',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 23`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            // File Transfer
+            'ftp': {
+                name: 'FTP',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport in {20 21}`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'sftp': {
+                name: 'SFTP',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 22`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'tftp': {
+                name: 'TFTP',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport eq 69`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            'smb': {
+                name: 'SMB/CIFS',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 445`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'nfs': {
+                name: 'NFS',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 2049`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            // Database
+            'mysql': {
+                name: 'MySQL/MariaDB',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 3306`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'postgresql': {
+                name: 'PostgreSQL',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 5432`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'mssql': {
+                name: 'MS SQL Server',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 1433`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'oracle': {
+                name: 'Oracle',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 1521`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'mongodb': {
+                name: 'MongoDB',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 27017`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'redis': {
+                name: 'Redis',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 6379`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'elasticsearch': {
+                name: 'Elasticsearch',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport in {9200 9300}`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            // Monitoring / Management
+            'snmp': {
+                name: 'SNMP',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport in {161 162}`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            'syslog': {
+                name: 'Syslog',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport eq 514`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            'ntp': {
+                name: 'NTP',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport eq 123`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            'icmp': {
+                name: 'ICMP',
+                expression: (ip) => `ip.dst eq ${ip} and ip.proto.num eq 1`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            'zabbix': {
+                name: 'Zabbix',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport in {10050 10051}`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'prometheus': {
+                name: 'Prometheus',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 9090`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            // Gaming
+            'minecraft': {
+                name: 'Minecraft',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 25565`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'steam': {
+                name: 'Steam',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport ge 27015 and udp.dstport le 27030`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            'teamspeak': {
+                name: 'TeamSpeak',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport eq 9987`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            'discord': {
+                name: 'Discord Voice',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport ge 50000`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            // Backup & Storage
+            'veeam': {
+                name: 'Veeam Backup',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport in {6160 6162 9401}`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'iscsi': {
+                name: 'iSCSI',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 3260`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            // Directory & Identity
+            'kerberos': {
+                name: 'Kerberos',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 88`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'ldap-gc': {
+                name: 'LDAP Global Catalog',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport in {3268 3269}`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'tacacs': {
+                name: 'TACACS+',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 49`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            // Monitoring Extended
+            'netflow': {
+                name: 'NetFlow/sFlow',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport in {2055 6343 9995 9996}`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            'ipmi': {
+                name: 'IPMI/BMC',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport eq 623`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            // Virtualization & DevOps
+            'kubernetes': {
+                name: 'Kubernetes API',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 6443`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'docker-registry': {
+                name: 'Docker Registry',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 5000`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'vmware': {
+                name: 'VMware vCenter',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport in {443 902}`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'esxi': {
+                name: 'VMware ESXi',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport in {443 902 903}`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'citrix': {
+                name: 'Citrix ICA/HDX',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport in {1494 2598}`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'proxmox': {
+                name: 'Proxmox VE',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 8006`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            // Network Infrastructure
+            'bgp': {
+                name: 'BGP',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 179`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            // Industrial / IoT
+            'modbus': {
+                name: 'Modbus TCP',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 502`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'bacnet': {
+                name: 'BACnet',
+                expression: (ip) => `ip.dst eq ${ip} and udp.dstport eq 47808`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            'opcua': {
+                name: 'OPC UA',
+                expression: (ip) => `ip.dst eq ${ip} and tcp.dstport eq 4840`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            // Generic
+            'tcp-all': {
+                name: 'All TCP',
+                expression: (ip) => `ip.dst eq ${ip} and ip.proto.num eq 6`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            },
+            'udp-all': {
+                name: 'All UDP',
+                expression: (ip) => `ip.dst eq ${ip} and ip.proto.num eq 17`,
+                targetRule: '599dab0942ff4898ac1b7797e954e98b',
+                targetName: 'UDP-0001: UDP flood'
+            },
+            'all': {
+                name: 'All Traffic',
+                expression: (ip) => `ip.dst eq ${ip}`,
+                targetRule: '9da0fb429a25436fa543519f4570f19f',
+                targetName: 'TCP-0001: TCP SYN flood'
+            }
+        };
+
+        // Override Modal Functions
+        function setEditorMode(mode) {
+            const currentMode = document.getElementById('override-editor-mode').value;
+            const isEditMode = document.getElementById('override-mode').value === 'edit';
+
+            // Sync data between editors when switching modes
+            if (currentMode !== mode) {
+                if (currentMode === 'simple' && mode === 'advanced') {
+                    // Simple → Advanced: copy simple values to advanced
+                    const simpleDesc = document.getElementById('simple-description').value;
+                    const simpleIp = document.getElementById('simple-ip').value.trim();
+                    const simpleService = document.getElementById('simple-service').value;
+                    const simpleSensitivity = document.getElementById('simple-sensitivity').value;
+
+                    if (simpleDesc) {
+                        document.getElementById('override-description').value = simpleDesc;
+                    }
+                    if (simpleIp && simpleService && serviceConfig[simpleService]) {
+                        const config = serviceConfig[simpleService];
+                        document.getElementById('override-expression').value = config.expression(simpleIp);
+                        document.getElementById('override-target').value = config.targetRule;
+                    }
+                    document.getElementById('override-sensitivity').value = simpleSensitivity;
+                } else if (currentMode === 'advanced' && mode === 'simple') {
+                    // Advanced → Simple: copy advanced values to simple
+                    const advDesc = document.getElementById('override-description').value;
+                    const advSensitivity = document.getElementById('override-sensitivity').value;
+                    const advExpr = document.getElementById('override-expression').value;
+                    const advTarget = document.getElementById('override-target').value;
+
+                    document.getElementById('simple-description').value = advDesc;
+                    document.getElementById('simple-sensitivity').value = advSensitivity;
+
+                    // Try to parse IP from expression
+                    const ipMatch = advExpr.match(/ip\.dst eq ([0-9.]+)/);
+                    if (ipMatch) {
+                        const ip = ipMatch[1];
+                        document.getElementById('simple-ip').value = ip;
+
+                        // Try to detect service from expression
+                        let detectedService = '';
+                        for (const [key, config] of Object.entries(serviceConfig)) {
+                            if (config.expression(ip) === advExpr && config.targetRule === advTarget) {
+                                detectedService = key;
+                                break;
+                            }
+                        }
+                        document.getElementById('simple-service').value = detectedService;
+                    }
+                }
+            }
+
+            document.getElementById('override-editor-mode').value = mode;
+            document.getElementById('btn-simple-mode').classList.toggle('active', mode === 'simple');
+            document.getElementById('btn-advanced-mode').classList.toggle('active', mode === 'advanced');
+            document.getElementById('simple-editor').style.display = mode === 'simple' ? 'block' : 'none';
+            document.getElementById('advanced-editor').style.display = mode === 'advanced' ? 'block' : 'none';
+            document.getElementById('btn-validate').style.display = mode === 'advanced' ? 'inline-block' : 'none';
+
+            // Update preview if switching to simple mode
+            if (mode === 'simple') {
+                updateServicePreview();
+            }
+        }
+
+        function updateServicePreview() {
+            const ip = document.getElementById('simple-ip').value.trim();
+            const service = document.getElementById('simple-service').value;
+            const previewBox = document.getElementById('simple-preview');
+
+            if (!ip || !service) {
+                previewBox.style.display = 'none';
+                return;
+            }
+
+            const config = serviceConfig[service];
+            if (!config) {
+                previewBox.style.display = 'none';
+                return;
+            }
+
+            document.getElementById('preview-expression').textContent = config.expression(ip);
+            document.getElementById('preview-rule').textContent = config.targetName;
+            previewBox.style.display = 'block';
+        }
+
+        // Update preview when IP changes
+        document.addEventListener('DOMContentLoaded', () => {
+            const ipInput = document.getElementById('simple-ip');
+            if (ipInput) {
+                ipInput.addEventListener('input', updateServicePreview);
+            }
+        });
+
+        function showAddOverrideModal() {
+            document.getElementById('override-modal-title').textContent = 'Add Override';
+            document.getElementById('override-mode').value = 'add';
+            document.getElementById('override-id').value = '';
+            // Reset simple mode
+            document.getElementById('simple-description').value = '';
+            document.getElementById('simple-ip').value = '';
+            document.getElementById('simple-service').value = '';
+            document.getElementById('simple-sensitivity').value = 'low';
+            document.getElementById('simple-preview').style.display = 'none';
+            // Reset advanced mode
+            document.getElementById('override-description').value = '';
+            document.getElementById('override-expression').value = '';
+            document.getElementById('override-sensitivity').value = 'low';
+            document.getElementById('override-target').value = '';
+            document.getElementById('override-enabled').checked = true;
+            document.getElementById('expression-validation').innerHTML = '';
+            document.getElementById('expression-validation').className = 'validation-message';
+            // Default to simple mode
+            setEditorMode('simple');
+            document.getElementById('override-modal').classList.add('active');
+        }
+
+        function showEditOverrideModal(overrideId) {
+            const override = currentOverrides.find(o => o.id === overrideId);
+            if (!override) {
+                showToast('Override not found', 'error');
+                return;
+            }
+
+            document.getElementById('override-modal-title').textContent = 'Edit Override';
+            document.getElementById('override-mode').value = 'edit';
+            document.getElementById('override-id').value = override.id;
+
+            // Set advanced mode values
+            document.getElementById('override-description').value = override.description || '';
+            document.getElementById('override-expression').value = override.expression || '';
+            document.getElementById('override-sensitivity').value = override.sensitivity_level || 'low';
+            document.getElementById('override-target').value = override.target_rule_id || '';
+            document.getElementById('override-enabled').checked = override.enabled !== false;
+            document.getElementById('expression-validation').innerHTML = '';
+            document.getElementById('expression-validation').className = 'validation-message';
+
+            // Also populate simple mode values for when user switches
+            document.getElementById('simple-description').value = override.description || '';
+            document.getElementById('simple-sensitivity').value = override.sensitivity_level || 'low';
+            // Try to parse IP from expression
+            const ipMatch = (override.expression || '').match(/ip\.dst eq ([0-9.]+)/);
+            if (ipMatch) {
+                document.getElementById('simple-ip').value = ipMatch[1];
+            } else {
+                document.getElementById('simple-ip').value = '';
+            }
+            // Try to detect service from expression and target rule
+            document.getElementById('simple-service').value = detectServiceFromOverride(override);
+
+            // Use advanced mode for editing (but simple values are ready if user switches)
+            setEditorMode('advanced');
+            document.getElementById('override-modal').classList.add('active');
+        }
+
+        // Try to detect which service matches the override
+        function detectServiceFromOverride(override) {
+            const expr = override.expression || '';
+            const targetRule = override.target_rule_id || '';
+
+            // Extract IP from expression
+            const ipMatch = expr.match(/ip\.dst eq ([0-9.]+)/);
+            if (!ipMatch) return '';
+            const ip = ipMatch[1];
+
+            // Check each service config to see if it matches
+            for (const [key, config] of Object.entries(serviceConfig)) {
+                const expectedExpr = config.expression(ip);
+                if (expr === expectedExpr && targetRule === config.targetRule) {
+                    return key;
+                }
+            }
+
+            return ''; // No match found
+        }
+
+        function hideOverrideModal() {
+            document.getElementById('override-modal').classList.remove('active');
+        }
+
+        let deleteOverrideId = null;
+
+        function showDeleteOverrideModal(overrideId, description) {
+            deleteOverrideId = overrideId;
+            document.getElementById('delete-override-name').textContent = description;
+            document.getElementById('delete-override-modal').classList.add('active');
+        }
+
+        function hideDeleteOverrideModal() {
+            deleteOverrideId = null;
+            document.getElementById('delete-override-modal').classList.remove('active');
+        }
+
+        async function validateExpression() {
+            const expression = document.getElementById('override-expression').value.trim();
+            const validationDiv = document.getElementById('expression-validation');
+
+            if (!expression) {
+                validationDiv.innerHTML = '⚠️ Expression is required';
+                validationDiv.className = 'validation-message invalid';
+                return false;
+            }
+
+            try {
+                const response = await fetch('/api/ddos-overrides/validate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ expression })
+                });
+
+                const data = await response.json();
+
+                if (data.valid) {
+                    validationDiv.innerHTML = '✅ Expression syntax is valid';
+                    validationDiv.className = 'validation-message valid';
+                    return true;
+                } else {
+                    const errors = data.errors ? data.errors.join(', ') : data.error;
+                    validationDiv.innerHTML = '❌ ' + errors;
+                    validationDiv.className = 'validation-message invalid';
+                    return false;
+                }
+            } catch (e) {
+                validationDiv.innerHTML = '❌ Validation failed: ' + e.message;
+                validationDiv.className = 'validation-message invalid';
+                return false;
+            }
+        }
+
+        async function saveOverride() {
+            const mode = document.getElementById('override-mode').value;
+            const editorMode = document.getElementById('override-editor-mode').value;
+            const overrideId = document.getElementById('override-id').value;
+            const enabled = document.getElementById('override-enabled').checked;
+
+            let description, expression, sensitivity, targetRuleId;
+
+            // Get values based on editor mode (works for both add and edit)
+            if (editorMode === 'simple') {
+                description = document.getElementById('simple-description').value.trim();
+                const ip = document.getElementById('simple-ip').value.trim();
+                const service = document.getElementById('simple-service').value;
+                sensitivity = document.getElementById('simple-sensitivity').value;
+
+                if (!description) {
+                    showToast('Description is required', 'error');
+                    return;
+                }
+                if (!ip) {
+                    showToast('IP address is required', 'error');
+                    return;
+                }
+                if (!service) {
+                    showToast('Service type is required', 'error');
+                    return;
+                }
+
+                // Validate IP format
+                const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+                if (!ipRegex.test(ip)) {
+                    showToast('Invalid IP address format', 'error');
+                    return;
+                }
+
+                const config = serviceConfig[service];
+                if (!config) {
+                    showToast('Invalid service type', 'error');
+                    return;
+                }
+
+                // Generate expression and target from service config
+                expression = config.expression(ip);
+                targetRuleId = config.targetRule;
+
+            } else {
+                // Advanced mode
+                description = document.getElementById('override-description').value.trim();
+                expression = document.getElementById('override-expression').value.trim();
+                sensitivity = document.getElementById('override-sensitivity').value;
+                targetRuleId = document.getElementById('override-target').value;
+
+                if (!description) {
+                    showToast('Description is required', 'error');
+                    return;
+                }
+                if (!expression) {
+                    showToast('Expression is required', 'error');
+                    return;
+                }
+
+                // Validate expression before saving
+                const isValid = await validateExpression();
+                if (!isValid) {
+                    showToast('Please fix the expression errors before saving', 'error');
+                    return;
+                }
+            }
+
+            try {
+                let url, method;
+                const payload = {
+                    description,
+                    expression,
+                    sensitivity_level: sensitivity,
+                    enabled
+                };
+
+                if (mode === 'add') {
+                    if (!targetRuleId) {
+                        showToast('Target rule is required', 'error');
+                        return;
+                    }
+                    payload.target_rule_id = targetRuleId;
+                    url = '/api/ddos-overrides';
+                    method = 'POST';
+                } else {
+                    url = `/api/ddos-overrides/${overrideId}`;
+                    method = 'PUT';
+                }
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    hideOverrideModal();
+                    showToast(data.message || 'Override saved successfully', 'success');
+                    await loadDDoSOverrides();
+                } else {
+                    showToast(data.error || 'Failed to save override', 'error');
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        async function confirmDeleteOverride() {
+            if (!deleteOverrideId) return;
+
+            try {
+                const response = await fetch(`/api/ddos-overrides/${deleteOverrideId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    hideDeleteOverrideModal();
+                    showToast('Override deleted successfully', 'success');
+                    await loadDDoSOverrides();
+                } else {
+                    showToast(data.error || 'Failed to delete override', 'error');
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        // Move override rule up (higher priority)
+        async function moveOverrideUp(overrideId) {
+            await moveOverride(overrideId, 'up');
+        }
+
+        // Move override rule down (lower priority)
+        async function moveOverrideDown(overrideId) {
+            await moveOverride(overrideId, 'down');
+        }
+
+        // Move override to specific position (1-based index)
+        async function moveOverrideToPosition(overrideId, position) {
+            await moveOverride(overrideId, null, position);
+        }
+
+        // Send move request to API
+        async function moveOverride(overrideId, direction, index = null) {
+            try {
+                const payload = index !== null ? { index } : { direction };
+
+                const response = await fetch(`/api/ddos-overrides/${overrideId}/move`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('Rule moved successfully', 'success');
+                    await loadDDoSOverrides();
+                } else {
+                    showToast(data.error || 'Failed to move rule', 'error');
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        // Close modals on ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideOverrideModal();
+                hideDeleteOverrideModal();
+            }
+        });
+
+        // Load connector health status for header indicator
+        async function loadConnectorHealth() {
+            try {
+                const response = await fetch('/api/connectors/health-summary');
+                const data = await response.json();
+
+                const dot = document.getElementById('connector-health-dot');
+                if (dot) {
+                    // Remove all status classes
+                    dot.classList.remove('healthy', 'degraded', 'down', 'unknown');
+
+                    // Add appropriate class based on overall status
+                    if (data.overall_status) {
+                        dot.classList.add(data.overall_status);
+                        dot.title = `Connectors: ${data.healthy || 0} healthy, ${data.degraded || 0} degraded, ${data.down || 0} down`;
+                    } else {
+                        dot.classList.add('unknown');
+                        dot.title = 'Connectors: Status unknown';
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load connector health:', error);
+                const dot = document.getElementById('connector-health-dot');
+                if (dot) {
+                    dot.classList.remove('healthy', 'degraded', 'down', 'unknown');
+                    dot.classList.add('unknown');
+                    dot.title = 'Connectors: Failed to load status';
+                }
+            }
+        }
+
+        // Refresh all data
+        async function refreshAll() {
+            document.getElementById('last-update').textContent = 'Refreshing...';
+
+            await Promise.all([
+                loadNetworkFlow(),
+                loadStats(),
+                loadPrefixes(),
+                loadServices(),
+                loadAttacks(),
+                loadAnalytics(),
+                loadRules(),
+                loadDDoS(),
+                loadDDoSOverrides(),
+                loadConnectorHealth()
+            ]);
+
+            const now = new Date();
+            document.getElementById('last-update').textContent =
+                `Last update: ${now.toLocaleTimeString('it-IT')}`;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshAll();
+            // Auto-refresh every 30 seconds
+            refreshInterval = setInterval(refreshAll, 30000);
+        });
+
+        // Password Change Modal Functions
+        function showPasswordModal() {
+            document.getElementById('password-modal').classList.add('active');
+            document.getElementById('current-password').focus();
+        }
+
+        function hidePasswordModal() {
+            document.getElementById('password-modal').classList.remove('active');
+            document.getElementById('password-form').reset();
+            document.getElementById('password-error').textContent = '';
+            document.getElementById('password-success').textContent = '';
+        }
+
+        async function changePassword(event) {
+            event.preventDefault();
+
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const errorEl = document.getElementById('password-error');
+            const successEl = document.getElementById('password-success');
+            const submitBtn = document.getElementById('password-submit');
+
+            errorEl.textContent = '';
+            successEl.textContent = '';
+
+            // Client-side validation
+            if (newPassword !== confirmPassword) {
+                errorEl.textContent = 'New passwords do not match';
+                return;
+            }
+
+            if (newPassword.length < 8) {
+                errorEl.textContent = 'Password must be at least 8 characters';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Changing...';
+
+            try {
+                const response = await fetch('/api/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword,
+                        confirm_password: confirmPassword
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    successEl.textContent = 'Password changed successfully!';
+                    document.getElementById('password-form').reset();
+                    setTimeout(hidePasswordModal, 2000);
+                } else {
+                    errorEl.textContent = data.error || 'Failed to change password';
+                }
+            } catch (error) {
+                errorEl.textContent = 'Network error: ' + error.message;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Change Password';
+            }
+        }
+
+        // Close modal on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                hidePasswordModal();
+                hideAttackDetail();
+                hideAnalyticsDetail();
+            }
+        });
+
+        // Dynamic Modal Helper Functions
+        function hasValue(val) {
+            return val !== null && val !== undefined && val !== '' && val !== '-';
+        }
+
+        function dynamicItem(label, value, options = {}) {
+            if (!hasValue(value)) return '';
+            const cssClass = options.cssClass || '';
+            const style = options.style || '';
+            return `<span class="detail-item" ${style ? `style="${style}"` : ''}><span class="detail-label">${label}:</span> <span class="${cssClass}">${value}</span></span>`;
+        }
+
+        function dynamicRow(items) {
+            const filtered = items.filter(item => item !== '');
+            if (filtered.length === 0) return '';
+            return `<div class="detail-row-inline">${filtered.join('')}</div>`;
+        }
+
+        function dynamicSection(title, rows, extraHtml = '') {
+            const filteredRows = rows.filter(row => row !== '');
+            if (filteredRows.length === 0 && !extraHtml) return '';
+            return `
+                <div class="detail-section">
+                    <div class="detail-section-title">${title}</div>
+                    ${filteredRows.join('')}
+                    ${extraHtml}
+                </div>
+            `;
+        }
+
+        // Attack Detail Modal Functions
+        async function showAttackDetail(attackId) {
+            const modal = document.getElementById('attack-detail-modal');
+            const content = document.getElementById('attack-detail-content');
+
+            // Show modal with loading state
+            modal.classList.add('active');
+            content.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading details...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/attacks/${attackId}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    content.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                    return;
+                }
+
+                const event = data.event;
+                const eventFormat = formatEventType(event.event_type);
+
+                // Build target string only if we have target_ip
+                const targetStr = hasValue(event.target_ip) ?
+                    (hasValue(event.target_port) ? `${event.target_ip}:${event.target_port}` : event.target_ip) : null;
+
+                // Build rate string only with actual values
+                const rateStr = [];
+                if (hasValue(event.packets_per_second)) rateStr.push(formatPackets(parseInt(event.packets_per_second)) + ' pps');
+                if (hasValue(event.megabits_per_second)) rateStr.push(event.megabits_per_second + ' Mbps');
+                const rateValue = rateStr.length > 0 ? rateStr.join(' / ') : null;
+
+                // Map badge class for detail modal
+                const detailBadgeClass = event.event_type === 'START' ? 'detail-badge-start' :
+                                        event.event_type === 'END' ? 'detail-badge-end' : 'detail-badge-withdraw';
+
+                // Event section (always has type and timestamp)
+                const eventSection = dynamicSection('🔥 Event', [
+                    dynamicRow([
+                        `<span class="detail-item"><span class="detail-label">Type:</span> <span class="detail-badge ${detailBadgeClass}">${eventFormat.label}</span></span>`,
+                        dynamicItem('Alert', formatAlertType(event.alert_type), { cssClass: 'detail-value-text' })
+                    ]),
+                    dynamicRow([
+                        dynamicItem('Time', formatTime(event.timestamp)),
+                        dynamicItem('Action', formatAction(event.action_taken), { cssClass: 'detail-value-text' })
+                    ])
+                ]);
+
+                // Target section - only if we have target info
+                const targetSection = dynamicSection('🎯 Target', [
+                    dynamicRow([
+                        dynamicItem('Prefix', event.prefix),
+                        dynamicItem('Protocol', event.protocol)
+                    ]),
+                    dynamicRow([
+                        dynamicItem('Target', targetStr),
+                        hasValue(event.dashboard_link) ? `<a href="${event.dashboard_link}" target="_blank" class="detail-link" style="font-size:0.75rem;">Cloudflare →</a>` : ''
+                    ])
+                ]);
+
+                // Attack section - only if we have attack details
+                const attackSection = dynamicSection('⚡ Attack', [
+                    dynamicRow([
+                        dynamicItem('Vector', event.attack_vector, { cssClass: 'detail-value-text' }),
+                        dynamicItem('Started', hasValue(event.start_time) ? formatTime(event.start_time) : null)
+                    ]),
+                    dynamicRow([
+                        dynamicItem('Rate', rateValue),
+                        dynamicItem('Max', event.max_rate, { cssClass: 'detail-value-text' })
+                    ]),
+                    dynamicRow([dynamicItem('Mitigation', event.mitigation || event.action, { cssClass: 'detail-value-text' })])
+                ]);
+
+                // Rule/Policy section - only if we have rule info
+                const ruleSection = dynamicSection('🛡️ Rule / Policy', [
+                    dynamicRow([dynamicItem('Rule', event.rule_name, { cssClass: 'detail-value-text' })]),
+                    dynamicRow([dynamicItem('Desc', event.rule_description, { cssClass: 'detail-value-text', style: 'font-size:0.75rem' })]),
+                    dynamicRow([dynamicItem('Policy', event.policy_name, { cssClass: 'detail-value-text' })])
+                ]);
+
+                // Build HTML dynamically
+                let html = '';
+
+                // Row 1: Event + Target (if available)
+                const row1Sections = [eventSection, targetSection].filter(s => s !== '');
+                if (row1Sections.length > 0) {
+                    html += `<div class="detail-grid" style="grid-template-columns: repeat(${row1Sections.length}, 1fr);">${row1Sections.join('')}</div>`;
+                }
+
+                // Row 2: Attack + Rule (if available)
+                const row2Sections = [attackSection, ruleSection].filter(s => s !== '');
+                if (row2Sections.length > 0) {
+                    html += `<div class="detail-grid" style="grid-template-columns: repeat(${row2Sections.length}, 1fr);">${row2Sections.join('')}</div>`;
+                }
+
+                // Footer bar with only available IDs
+                const footerItems = [`<span>Event #${event.id}</span>`];
+                if (hasValue(event.attack_id)) footerItems.push(`<span>Attack: ${event.attack_id}</span>`);
+                if (hasValue(event.rule_id)) footerItems.push(`<span>Rule: ${event.rule_id}</span>`);
+                if (hasValue(event.policy_id)) footerItems.push(`<span>Policy: ${event.policy_id}</span>`);
+
+                html += `<div class="detail-footer-bar" style="font-size: 0.7rem; padding: 0.4rem 0.75rem;">${footerItems.join('')}</div>`;
+
+                content.innerHTML = html;
+
+            } catch (error) {
+                content.innerHTML = `<div class="error">Network error: ${error.message}</div>`;
+            }
+        }
+
+        function hideAttackDetail() {
+            document.getElementById('attack-detail-modal').classList.remove('active');
+        }
+
+        // Analytics Detail Modal Functions
+        async function showAnalyticsDetail(analyticsId) {
+            const modal = document.getElementById('analytics-detail-modal');
+            const content = document.getElementById('analytics-detail-content');
+
+            // Show modal with loading state
+            modal.classList.add('active');
+            content.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading details...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/analytics/${analyticsId}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    content.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                    return;
+                }
+
+                const event = data.event;
+
+                // Outcome badge
+                const outcomeBadge = event.outcome === 'drop' ? 'detail-badge-start' : 'detail-badge-end';
+
+                // Build protocol string with optional TCP flags
+                const protocolStr = hasValue(event.protocol) ?
+                    (hasValue(event.tcp_flags) ? `${event.protocol} (${event.tcp_flags})` : event.protocol) : null;
+
+                // Build source IP string with optional port
+                const sourceStr = hasValue(event.source_ip) ?
+                    (hasValue(event.source_port) ? `${event.source_ip}:${event.source_port}` : event.source_ip) : null;
+
+                // Build destination IP string with optional port
+                const destStr = hasValue(event.destination_ip) ?
+                    (hasValue(event.destination_port) ? `${event.destination_ip}:${event.destination_port}` : event.destination_ip) : null;
+
+                // Build CF PoP string only if we have colo info
+                let coloStr = null;
+                if (hasValue(event.colo_code)) {
+                    coloStr = event.colo_code;
+                    if (hasValue(event.colo_country)) coloStr += ` (${event.colo_country})`;
+                    if (hasValue(event.colo_city)) coloStr += ` - ${event.colo_city}`;
+                }
+
+                // Build packets string only if we have data
+                const packetsStr = hasValue(event.packets) ?
+                    `${formatPackets(event.packets)}${hasValue(event.kpps) ? ` (${event.kpps} kpps)` : ''}` : null;
+
+                // Build bandwidth string only if we have data
+                const bandwidthStr = hasValue(event.bits) ?
+                    `${formatBits(event.bits)}${hasValue(event.mbps) ? ` (${event.mbps} Mbps)` : ''}` : null;
+
+                // Attack section
+                const verdictBadge = event.verdict === 'drop' ? 'detail-badge-start' : 'detail-badge-end';
+                const attackSection = dynamicSection('⚡ Attack', [
+                    dynamicRow([dynamicItem('Vector', event.attack_vector, { cssClass: 'detail-value-text' })]),
+                    dynamicRow([dynamicItem('Protocol', protocolStr)]),
+                    dynamicRow([
+                        hasValue(event.outcome) ? `<span class="detail-item"><span class="detail-label">Outcome:</span> <span class="detail-badge ${outcomeBadge}">${event.outcome.toUpperCase()}</span></span>` : '',
+                        hasValue(event.verdict) ? `<span class="detail-item"><span class="detail-label">Verdict:</span> <span class="detail-badge ${verdictBadge}">${event.verdict.toUpperCase()}</span></span>` : ''
+                    ]),
+                    dynamicRow([dynamicItem('Mitigation', event.mitigation_reason, { cssClass: 'detail-value-text' })])
+                ]);
+
+                // Traffic section
+                const trafficSection = dynamicSection('📈 Traffic', [
+                    dynamicRow([dynamicItem('Packets', packetsStr)]),
+                    dynamicRow([dynamicItem('Bandwidth', bandwidthStr)]),
+                    dynamicRow([dynamicItem('Event Time', hasValue(event.event_datetime) ? formatTime(event.event_datetime) : null)]),
+                    dynamicRow([dynamicItem('Notified', hasValue(event.notified_at) ? formatTime(event.notified_at) : null)])
+                ]);
+
+                // Build source ASN string
+                let sourceAsnStr = null;
+                if (hasValue(event.source_asn)) {
+                    sourceAsnStr = `AS${event.source_asn}`;
+                    if (hasValue(event.source_asn_name)) sourceAsnStr += ` (${event.source_asn_name})`;
+                }
+
+                // Source section with ASN/Country
+                const sourceSection = dynamicSection('🌍 Source', [
+                    dynamicRow([
+                        dynamicItem('IP', sourceStr),
+                        dynamicItem('Country', event.source_country)
+                    ]),
+                    dynamicRow([dynamicItem('ASN', sourceAsnStr, { cssClass: 'detail-value-text' })]),
+                    dynamicRow([dynamicItem('CF PoP', coloStr)])
+                ]);
+
+                // Target section
+                const targetSection = dynamicSection('🎯 Target', [
+                    dynamicRow([dynamicItem('IP', destStr)]),
+                    dynamicRow([dynamicItem('Rule', event.rule_name, { cssClass: 'detail-value-text' })])
+                ]);
+
+                // Build HTML dynamically
+                let html = '';
+
+                // Row 1: Attack + Traffic (if available)
+                const row1Sections = [attackSection, trafficSection].filter(s => s !== '');
+                if (row1Sections.length > 0) {
+                    html += `<div class="detail-grid" style="grid-template-columns: repeat(${row1Sections.length}, 1fr);">${row1Sections.join('')}</div>`;
+                }
+
+                // Row 2: Source + Target (if available)
+                const row2Sections = [sourceSection, targetSection].filter(s => s !== '');
+                if (row2Sections.length > 0) {
+                    html += `<div class="detail-grid" style="grid-template-columns: repeat(${row2Sections.length}, 1fr);">${row2Sections.join('')}</div>`;
+                }
+
+                // Rule description (only if available)
+                if (hasValue(event.rule_description)) {
+                    html += `
+                        <div class="detail-section" style="margin-bottom: 0.5rem;">
+                            <div class="detail-section-title">🛡️ Rule Description</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); max-height: 60px; overflow-y: auto;">${event.rule_description}</div>
+                        </div>
+                    `;
+                }
+
+                // Footer bar with only available IDs
+                const footerItems = [`<span>Event #${event.id}</span>`];
+                if (hasValue(event.attack_id)) footerItems.push(`<span title="Attack ID">${event.attack_id}</span>`);
+                if (hasValue(event.rule_id)) footerItems.push(`<span title="Rule ID">${event.rule_id}</span>`);
+
+                html += `
+                    <div class="detail-footer-bar" style="font-size: 0.7rem; padding: 0.4rem 0.75rem;">
+                        ${footerItems.join('')}
+                    </div>
+                `;
+
+                content.innerHTML = html;
+
+            } catch (error) {
+                content.innerHTML = `<div class="error">Network error: ${error.message}</div>`;
+            }
+        }
+
+        function hideAnalyticsDetail() {
+            document.getElementById('analytics-detail-modal').classList.remove('active');
+        }
+
+        // MNM Rule Edit Modal Functions
+        function showMnmRuleEdit(ruleIndex) {
+            const rule = mnmRulesData[ruleIndex];
+            if (!rule) return;
+
+            const modal = document.getElementById('mnm-edit-modal');
+            const thresholdFields = document.getElementById('mnm-threshold-fields');
+
+            // Store rule info
+            document.getElementById('mnm-edit-rule-id').value = rule.id;
+            document.getElementById('mnm-edit-rule-type').value = rule.type;
+
+            // Display rule info
+            document.getElementById('mnm-edit-name').textContent = rule.name || '-';
+            document.getElementById('mnm-edit-prefixes').textContent = rule.prefixes ? rule.prefixes.join(', ') : '-';
+
+            // Type display
+            const typeLabels = {
+                'bps': 'Bandwidth (BPS)',
+                'pps': 'Packets (PPS)',
+                'sflow': 'Advanced DDoS (sFlow)',
+                'zscore': 'Dynamic (ZScore)'
+            };
+            document.getElementById('mnm-edit-type-display').textContent = typeLabels[rule.type] || rule.type;
+
+            // Auto-advertisement
+            document.getElementById('mnm-edit-auto-adv').checked = rule.automatic_advertisement || false;
+
+            // Threshold fields visibility and values
+            if (rule.type === 'sflow' || rule.type === 'zscore') {
+                thresholdFields.style.display = 'none';
+            } else {
+                thresholdFields.style.display = 'block';
+                const thresholdLabel = document.getElementById('mnm-threshold-label');
+                const thresholdInput = document.getElementById('mnm-edit-threshold');
+                const thresholdHint = document.getElementById('mnm-threshold-hint');
+                const durationInput = document.getElementById('mnm-edit-duration');
+
+                if (rule.type === 'bps') {
+                    thresholdLabel.textContent = 'Threshold (Gbps)';
+                    thresholdInput.min = 1;
+                    thresholdInput.max = 100;
+                    thresholdInput.value = rule.bandwidth_threshold ? Math.round(rule.bandwidth_threshold / 1e9) : '';
+                    thresholdHint.textContent = 'Min: 1 Gbps, Max: 100 Gbps';
+                } else if (rule.type === 'pps') {
+                    thresholdLabel.textContent = 'Threshold (kpps)';
+                    thresholdInput.min = 10;
+                    thresholdInput.max = 10000;
+                    thresholdInput.value = rule.packet_threshold ? Math.round(rule.packet_threshold / 1e3) : '';
+                    thresholdHint.textContent = 'Min: 10 kpps, Max: 10,000 kpps';
+                }
+
+                // Parse duration (e.g., "5m0s" -> 5)
+                if (rule.duration) {
+                    const match = rule.duration.match(/(\d+)m/);
+                    durationInput.value = match ? parseInt(match[1]) : '';
+                } else {
+                    durationInput.value = '';
+                }
+            }
+
+            modal.classList.add('active');
+        }
+
+        function hideMnmRuleEdit() {
+            document.getElementById('mnm-edit-modal').classList.remove('active');
+        }
+
+        async function saveMnmRule() {
+            const ruleId = document.getElementById('mnm-edit-rule-id').value;
+            const ruleType = document.getElementById('mnm-edit-rule-type').value;
+            const autoAdv = document.getElementById('mnm-edit-auto-adv').checked;
+
+            const data = {
+                automatic_advertisement: autoAdv
+            };
+
+            // Add threshold fields for BPS/PPS rules
+            if (ruleType !== 'sflow' && ruleType !== 'zscore') {
+                const threshold = parseInt(document.getElementById('mnm-edit-threshold').value);
+                const duration = parseInt(document.getElementById('mnm-edit-duration').value);
+
+                // Validate threshold
+                if (ruleType === 'bps') {
+                    if (isNaN(threshold) || threshold < 1 || threshold > 100) {
+                        showToast('Threshold must be between 1 and 100 Gbps', 'error');
+                        return;
+                    }
+                    data.bandwidth_threshold = threshold * 1e9;
+                } else if (ruleType === 'pps') {
+                    if (isNaN(threshold) || threshold < 10 || threshold > 10000) {
+                        showToast('Threshold must be between 10 and 10,000 kpps', 'error');
+                        return;
+                    }
+                    data.packet_threshold = threshold * 1e3;
+                }
+
+                // Validate duration
+                if (isNaN(duration) || duration < 1 || duration > 60) {
+                    showToast('Duration must be between 1 and 60 minutes', 'error');
+                    return;
+                }
+                data.duration = `${duration}m0s`;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/mnm-rules/${ruleId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Rule updated successfully!', 'success');
+                    hideMnmRuleEdit();
+                    await loadRules();
+                } else {
+                    showToast('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type + ' active';
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 4000);
+        }
+
+        // ESC key to close MNM edit modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideMnmRuleEdit();
+            }
+        });
+    </script>
+
+    <!-- Password Change Modal -->
+    <div id="password-modal" class="modal-overlay" onclick="if(event.target === this) hidePasswordModal()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Change Password</h2>
+                <button class="modal-close" onclick="hidePasswordModal()">&times;</button>
+            </div>
+            <form id="password-form" onsubmit="changePassword(event)">
+                <div class="form-group">
+                    <label class="form-label" for="current-password">Current Password</label>
+                    <input type="password" id="current-password" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="new-password">New Password</label>
+                    <input type="password" id="new-password" class="form-input" required minlength="8">
+                    <div class="form-hint">Minimum 8 characters</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="confirm-password">Confirm New Password</label>
+                    <input type="password" id="confirm-password" class="form-input" required>
+                </div>
+                <div id="password-error" class="form-error"></div>
+                <div id="password-success" class="form-success"></div>
+                <button type="submit" id="password-submit" class="btn-primary">Change Password</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Attack Detail Modal -->
+    <div id="attack-detail-modal" class="modal-overlay" onclick="if(event.target === this) hideAttackDetail()">
+        <div class="modal-content detail-modal">
+            <div class="modal-header">
+                <h2 class="modal-title">🔥 Attack Event Details</h2>
+                <button class="modal-close" onclick="hideAttackDetail()">&times;</button>
+            </div>
+            <div id="attack-detail-content">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    Loading details...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Detail Modal -->
+    <div id="analytics-detail-modal" class="modal-overlay" onclick="if(event.target === this) hideAnalyticsDetail()">
+        <div class="modal-content detail-modal">
+            <div class="modal-header">
+                <h2 class="modal-title">📊 Network Analytics Details</h2>
+                <button class="modal-close" onclick="hideAnalyticsDetail()">&times;</button>
+            </div>
+            <div id="analytics-detail-content">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    Loading details...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MNM Rule Edit Modal -->
+    <div id="mnm-edit-modal" class="modal-overlay" onclick="if(event.target === this) hideMnmRuleEdit()">
+        <div class="modal-content mnm-edit-modal">
+            <div class="modal-header">
+                <h2 class="modal-title">📋 Edit MNM Rule</h2>
+                <button class="modal-close" onclick="hideMnmRuleEdit()">&times;</button>
+            </div>
+            <input type="hidden" id="mnm-edit-rule-id">
+            <input type="hidden" id="mnm-edit-rule-type">
+
+            <!-- Rule Info (read-only) -->
+            <div class="mnm-rule-info">
+                <div class="mnm-rule-info-row">
+                    <span class="mnm-rule-info-label">Name:</span>
+                    <span class="mnm-rule-info-value" id="mnm-edit-name">-</span>
+                </div>
+                <div class="mnm-rule-info-row">
+                    <span class="mnm-rule-info-label">Prefixes:</span>
+                    <span class="mnm-rule-info-value" id="mnm-edit-prefixes">-</span>
+                </div>
+                <div class="mnm-rule-info-row">
+                    <span class="mnm-rule-info-label">Type:</span>
+                    <span class="mnm-rule-info-value" id="mnm-edit-type-display">-</span>
+                </div>
+            </div>
+
+            <!-- Editable fields for threshold rules -->
+            <div id="mnm-threshold-fields">
+                <div class="form-group">
+                    <label class="form-label" id="mnm-threshold-label">Threshold (Gbps)</label>
+                    <input type="number" id="mnm-edit-threshold" class="form-input" min="1" max="100">
+                    <div class="form-hint" id="mnm-threshold-hint">Min: 1 Gbps, Max: 100 Gbps</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Duration (minutes)</label>
+                    <input type="number" id="mnm-edit-duration" class="form-input" min="1" max="60">
+                    <div class="form-hint">Min: 1 min, Max: 60 min</div>
+                </div>
+            </div>
+
+            <!-- Auto-advertisement (all rule types) -->
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="mnm-edit-auto-adv">
+                    <span>Auto-advertisement (automatically advertise prefix when triggered)</span>
+                </label>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="hideMnmRuleEdit()">Cancel</button>
+                <button class="btn-save" onclick="saveMnmRule()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+</body>
+</html>

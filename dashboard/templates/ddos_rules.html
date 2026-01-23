@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDoS Rules Manager - Cloudflare Magic Transit Dashboard</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border-color: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-red: #f85149;
+            --accent-yellow: #d29922;
+            --accent-orange: #f0883e;
+            --accent-purple: #a371f7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #f6821f 0%, #ff6633 50%, #faad3f 100%);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 1.4rem;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .header-subtitle {
+            color: rgba(255,255,255,0.9);
+            font-size: 0.85rem;
+        }
+
+        .back-btn {
+            background: white;
+            border: none;
+            color: #d35400;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .back-btn:hover {
+            background: #f8f8f8;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-mini {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            text-align: center;
+            min-width: 120px;
+            text-decoration: none;
+        }
+
+        .stat-mini.active {
+            border-color: var(--accent-orange);
+            background: rgba(240, 136, 62, 0.1);
+        }
+
+        .stat-mini-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .stat-mini-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .stat-mini.block .stat-mini-value { color: var(--accent-red); }
+        .stat-mini.dynamic .stat-mini-value { color: var(--accent-blue); }
+        .stat-mini.log .stat-mini-value { color: var(--accent-yellow); }
+        .stat-mini.editable .stat-mini-value { color: var(--accent-green); }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: var(--bg-tertiary);
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 0;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .card-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .card-body::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        .card-body::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            color: var(--text-secondary);
+            font-weight: 500;
+            background: var(--bg-tertiary);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        tbody tr.editable-row {
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+
+        tbody tr.editable-row:active {
+            background: var(--border-color);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--accent-green);
+        }
+
+        .badge-danger {
+            background: rgba(248, 81, 73, 0.2);
+            color: var(--accent-red);
+        }
+
+        .badge-warning {
+            background: rgba(210, 153, 34, 0.2);
+            color: var(--accent-yellow);
+        }
+
+        .badge-info {
+            background: rgba(88, 166, 255, 0.2);
+            color: var(--accent-blue);
+        }
+
+        .rule-desc {
+            max-width: 400px;
+        }
+
+        .rule-categories {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+
+        .category-tag {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            color: var(--accent-red);
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: rgba(255,255,255,0.85);
+            font-size: 0.875rem;
+        }
+
+        .footer a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        .search-box {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            width: 250px;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .btn-edit {
+            background: var(--accent-blue);
+            border: none;
+            color: white;
+            padding: 0.3rem 0.65rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-edit:hover {
+            background: #4c9aed;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+
+        .btn-edit:disabled {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            background: var(--bg-tertiary);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .form-select option {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .rule-info {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .rule-info-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .rule-info-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .modal-footer {
+            background: var(--bg-tertiary);
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1.25rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-cancel {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-cancel:hover {
+            background: var(--border-color);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+
+        .btn-save {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #4a9eff;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+
+        .btn-save:disabled {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.875rem;
+            z-index: 1001;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success {
+            background: var(--accent-green);
+            display: block;
+        }
+
+        .toast.error {
+            background: var(--accent-red);
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .stats-row {
+                justify-content: center;
+            }
+            .search-box {
+                width: 100%;
+            }
+            .rule-desc {
+                max-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <div>
+                <h1>🛡️ DDoS L3/4 Rules Manager</h1>
+                <span class="header-subtitle" id="ruleset-name">Loading...</span>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <span style="color: rgba(255,255,255,0.8); font-size: 0.75rem;" id="last-refresh">Last refresh: --:--:--</span>
+            <button class="back-btn" onclick="manualRefresh()" style="padding: 0.4rem 0.8rem;">↻ Refresh</button>
+            <a href="/" class="back-btn">← Dashboard</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="stats-row" id="stats-row">
+            <a href="/ddos-rules" class="stat-mini" id="stat-total">
+                <div class="stat-mini-value" id="count-total">-</div>
+                <div class="stat-mini-label">Total Rules</div>
+            </a>
+            <a href="/ddos-rules/block" class="stat-mini block" id="stat-block">
+                <div class="stat-mini-value" id="count-block">-</div>
+                <div class="stat-mini-label">Block</div>
+            </a>
+            <a href="/ddos-rules/ddos_dynamic" class="stat-mini dynamic" id="stat-dynamic">
+                <div class="stat-mini-value" id="count-dynamic">-</div>
+                <div class="stat-mini-label">Dynamic</div>
+            </a>
+            <a href="/ddos-rules/log" class="stat-mini log" id="stat-log">
+                <div class="stat-mini-value" id="count-log">-</div>
+                <div class="stat-mini-label">Log</div>
+            </a>
+            <a href="#editable-section" class="stat-mini editable" id="stat-editable">
+                <div class="stat-mini-value" id="count-editable">-</div>
+                <div class="stat-mini-label">Editable</div>
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title" id="filter-title">All Rules</span>
+                <input type="text" class="search-box" placeholder="Search rules..." id="search-box" onkeyup="filterTable()">
+            </div>
+            <div class="card-body">
+                <div class="loading" id="loading">
+                    <div class="loading-spinner"></div>
+                    Loading rules...
+                </div>
+                <table id="rules-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Description</th>
+                            <th>Action</th>
+                            <th>Sensitivity</th>
+                            <th>Categories</th>
+                            <th>Edit</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rules-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Editable Rules Section -->
+        <div class="card" id="editable-section" style="margin-top: 1.5rem;">
+            <div class="card-header">
+                <span class="card-title">✏️ Editable Rules (<span id="editable-count">0</span>)</span>
+                <span style="color: var(--text-secondary); font-size: 0.8rem;">Rules with customizable action/sensitivity</span>
+            </div>
+            <div class="card-body">
+                <table id="editable-table">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Description</th>
+                            <th>Action</th>
+                            <th>Sensitivity</th>
+                            <th>Override</th>
+                            <th>Edit</th>
+                        </tr>
+                    </thead>
+                    <tbody id="editable-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <a href="/">← Back to Dashboard</a> | GOLINE SOC · Magic Transit Dashboard v{{ version }}
+    </footer>
+
+    <!-- Edit Modal -->
+    <div class="modal-overlay" id="edit-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">Edit Rule Action</span>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="rule-info">
+                    <div class="rule-info-title" id="modal-rule-desc">Rule Description</div>
+                    <div class="rule-info-desc">
+                        Current: <span id="modal-current-action">-</span> / <span id="modal-current-sensitivity">-</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Action</label>
+                    <select class="form-select" id="modal-action-select">
+                        <option value="">Select an action...</option>
+                    </select>
+                </div>
+                <div class="form-group" id="sensitivity-group" style="display: none;">
+                    <label class="form-label">Sensitivity Level <span style="color: var(--text-secondary); font-size: 0.75rem;">(only for Dynamic action)</span></label>
+                    <select class="form-select" id="modal-sensitivity-select">
+                        <option value="">Keep current</option>
+                        <option value="default">High (default)</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low (less aggressive)</option>
+                        <option value="eoff">Essentially Off</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-save" id="btn-save" onclick="saveRule()" disabled>Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const currentAction = "{{ action or '' }}";
+        let allRules = [];
+        let currentEditRule = null;
+
+        // Format action for display
+        function formatAction(action) {
+            const mapping = {
+                'block': 'Block',
+                'ddos_dynamic': 'Dynamic',
+                'log': 'Log',
+                'challenge': 'Challenge'
+            };
+            return mapping[action] || action;
+        }
+
+        // Get badge class for action
+        function getActionBadge(action) {
+            if (action === 'block') return 'badge-danger';
+            if (action === 'log') return 'badge-warning';
+            return 'badge-info';
+        }
+
+        // Load summary stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/ddos-sensitivity');
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('ruleset-name').textContent = data.ruleset_name;
+                    document.getElementById('count-total').textContent = data.total_rules;
+                    document.getElementById('count-block').textContent = data.action_counts.block || 0;
+                    document.getElementById('count-dynamic').textContent = data.action_counts.ddos_dynamic || 0;
+                    document.getElementById('count-log').textContent = data.action_counts.log || 0;
+
+                    // Highlight active filter
+                    if (!currentAction) {
+                        document.getElementById('stat-total').classList.add('active');
+                    } else if (currentAction === 'block') {
+                        document.getElementById('stat-block').classList.add('active');
+                    } else if (currentAction === 'ddos_dynamic') {
+                        document.getElementById('stat-dynamic').classList.add('active');
+                    } else if (currentAction === 'log') {
+                        document.getElementById('stat-log').classList.add('active');
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        // Load rules
+        async function loadRules(forceRefresh = false) {
+            try {
+                let url = currentAction ? `/api/ddos-rules/${currentAction}` : '/api/ddos-rules';
+                // Add cache-busting parameter to force fresh data
+                if (forceRefresh) {
+                    url += (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+                }
+                const response = await fetch(url, { cache: 'no-store' });
+                const data = await response.json();
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('rules-table').style.display = 'table';
+
+                if (!data.success) {
+                    document.getElementById('rules-body').innerHTML = `
+                        <tr><td colspan="6" class="error">Error: ${data.error}</td></tr>
+                    `;
+                    return;
+                }
+
+                allRules = data.rules;
+
+                // Update filter title
+                const filterTitle = currentAction ?
+                    `${formatAction(currentAction)} Rules (${data.total_rules})` :
+                    `All Rules (${data.total_rules})`;
+                document.getElementById('filter-title').textContent = filterTitle;
+
+                renderRules(allRules);
+
+                // Load ALL editable rules (separate call without filter)
+                // This ensures the Editable Rules section always shows all 29 editable rules
+                const allRulesUrl = '/api/ddos-rules' + (forceRefresh ? '?_t=' + Date.now() : '');
+                const allRulesResponse = await fetch(allRulesUrl, { cache: 'no-store' });
+                const allRulesData = await allRulesResponse.json();
+
+                if (allRulesData.success) {
+                    const editableRules = allRulesData.rules.filter(r => r.is_editable);
+                    document.getElementById('count-editable').textContent = editableRules.length;
+                    document.getElementById('editable-count').textContent = editableRules.length;
+                    renderEditableRules(editableRules);
+                }
+
+            } catch (error) {
+                document.getElementById('loading').innerHTML = `
+                    <div class="error">Failed to load rules: ${error.message}</div>
+                `;
+            }
+        }
+
+        // Render rules table
+        function renderRules(rules) {
+            const tbody = document.getElementById('rules-body');
+
+            if (rules.length === 0) {
+                tbody.innerHTML = `
+                    <tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">No rules found</td></tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            rules.forEach((rule, index) => {
+                const statusBadge = rule.enabled ?
+                    '<span class="badge badge-success">Enabled</span>' :
+                    '<span class="badge badge-warning">Disabled</span>';
+
+                const actionBadge = `<span class="badge ${getActionBadge(rule.action)}">${formatAction(rule.action)}</span>`;
+
+                const categories = rule.categories.length > 0 ?
+                    rule.categories.map(c => `<span class="category-tag">${c}</span>`).join('') :
+                    '<span class="category-tag">-</span>';
+
+                // Edit button - enabled only for editable rules
+                let editButton;
+                let rowClass = '';
+                let rowDblclick = '';
+                if (rule.is_editable) {
+                    editButton = `<button class="btn-edit" onclick="event.stopPropagation(); openEditModal(${index})" title="Edit action">Edit</button>`;
+                    rowClass = 'editable-row';
+                    rowDblclick = `ondblclick="openEditModal(${index})" title="Double-click to edit"`;
+                } else {
+                    editButton = `<button class="btn-edit" disabled title="Read-only rule">-</button>`;
+                }
+
+                html += `
+                    <tr class="${rowClass}" ${rowDblclick}>
+                        <td>${statusBadge}</td>
+                        <td class="rule-desc" title="${rule.description}">${rule.description}</td>
+                        <td>${actionBadge}</td>
+                        <td>${rule.sensitivity_level}</td>
+                        <td><div class="rule-categories">${categories}</div></td>
+                        <td>${editButton}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        // Render editable rules table
+        function renderEditableRules(rules) {
+            const tbody = document.getElementById('editable-body');
+
+            if (rules.length === 0) {
+                tbody.innerHTML = `
+                    <tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">No editable rules found</td></tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            rules.forEach((rule) => {
+                // Find the index in allRules for the edit modal
+                const ruleIndex = allRules.findIndex(r => r.id === rule.id);
+
+                const statusBadge = rule.enabled ?
+                    '<span class="badge badge-success">Enabled</span>' :
+                    '<span class="badge badge-warning">Disabled</span>';
+
+                const actionBadge = `<span class="badge ${getActionBadge(rule.action)}">${formatAction(rule.action)}</span>`;
+
+                // Override badge
+                const overrideBadge = rule.has_override ?
+                    '<span class="badge badge-info">Custom</span>' :
+                    '<span class="badge" style="background: rgba(139,148,158,0.2); color: var(--text-secondary);">Default</span>';
+
+                const editButton = `<button class="btn-edit" onclick="event.stopPropagation(); openEditModal(${ruleIndex})" title="Edit action">Edit</button>`;
+
+                html += `
+                    <tr class="editable-row" ondblclick="openEditModal(${ruleIndex})" title="Double-click to edit">
+                        <td>${statusBadge}</td>
+                        <td class="rule-desc" title="${rule.description}">${rule.description}</td>
+                        <td>${actionBadge}</td>
+                        <td>${rule.sensitivity_level}</td>
+                        <td>${overrideBadge}</td>
+                        <td>${editButton}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        // Filter table by search
+        function filterTable() {
+            const searchTerm = document.getElementById('search-box').value.toLowerCase();
+            const filtered = allRules.filter(rule =>
+                rule.description.toLowerCase().includes(searchTerm) ||
+                rule.categories.some(c => c.toLowerCase().includes(searchTerm))
+            );
+            renderRules(filtered);
+        }
+
+        // Open edit modal
+        function openEditModal(ruleIndex) {
+            const rule = allRules[ruleIndex];
+            if (!rule || !rule.is_editable) return;
+
+            currentEditRule = rule;
+
+            // Populate modal
+            document.getElementById('modal-rule-desc').textContent = rule.description;
+            document.getElementById('modal-current-action').textContent = formatAction(rule.action);
+            document.getElementById('modal-current-sensitivity').textContent = rule.sensitivity_level || 'default';
+
+            // Populate action select
+            const actionSelect = document.getElementById('modal-action-select');
+            actionSelect.innerHTML = '<option value="">Keep current (' + formatAction(rule.action) + ')</option>';
+
+            rule.allowed_actions.forEach(action => {
+                const option = document.createElement('option');
+                option.value = action;
+                option.textContent = formatAction(action);
+                actionSelect.appendChild(option);
+            });
+
+            // Reset sensitivity select and show/hide based on current action
+            const sensitivitySelect = document.getElementById('modal-sensitivity-select');
+            sensitivitySelect.value = '';
+            const sensitivityGroup = document.getElementById('sensitivity-group');
+            // Show sensitivity only if current action is ddos_dynamic
+            sensitivityGroup.style.display = (rule.action === 'ddos_dynamic') ? 'block' : 'none';
+
+            // Reset save button
+            document.getElementById('btn-save').disabled = true;
+
+            // Show modal
+            document.getElementById('edit-modal').classList.add('active');
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('edit-modal').classList.remove('active');
+            currentEditRule = null;
+        }
+
+        // Check if any changes were made and update UI
+        function checkChanges() {
+            const selectedAction = document.getElementById('modal-action-select').value;
+            const selectedSensitivity = document.getElementById('modal-sensitivity-select').value;
+            const saveBtn = document.getElementById('btn-save');
+            const sensitivityGroup = document.getElementById('sensitivity-group');
+
+            // Determine effective action (selected or current)
+            const effectiveAction = selectedAction || currentEditRule.action;
+
+            // Show sensitivity only for ddos_dynamic action
+            sensitivityGroup.style.display = (effectiveAction === 'ddos_dynamic') ? 'block' : 'none';
+
+            // If action changed to something other than ddos_dynamic, reset sensitivity
+            if (effectiveAction !== 'ddos_dynamic') {
+                document.getElementById('modal-sensitivity-select').value = '';
+            }
+
+            // Enable save if any change is made
+            const hasChanges = selectedAction || (effectiveAction === 'ddos_dynamic' && selectedSensitivity);
+            saveBtn.disabled = !hasChanges;
+        }
+
+        // Handle action select change
+        document.getElementById('modal-action-select').addEventListener('change', checkChanges);
+        document.getElementById('modal-sensitivity-select').addEventListener('change', checkChanges);
+
+        // Save rule
+        async function saveRule() {
+            if (!currentEditRule) return;
+
+            const newAction = document.getElementById('modal-action-select').value;
+            const newSensitivity = document.getElementById('modal-sensitivity-select').value;
+
+            // Check if any changes
+            if (!newAction && !newSensitivity) return;
+
+            const saveBtn = document.getElementById('btn-save');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+
+            // Build request body
+            const requestBody = {};
+            const effectiveAction = newAction || currentEditRule.action;
+            requestBody.action = effectiveAction;
+
+            // Only include sensitivity for ddos_dynamic action
+            if (effectiveAction === 'ddos_dynamic' && newSensitivity) {
+                requestBody.sensitivity_level = newSensitivity;
+            }
+
+            try {
+                const response = await fetch(`/api/ddos-rules/${currentEditRule.id}/update`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('Rule updated successfully!', 'success');
+                    closeModal();
+
+                    // Small delay to allow Cloudflare API to propagate changes
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+
+                    // Reload data with cache bypass
+                    await Promise.all([loadStats(), loadRules(true)]);
+                } else {
+                    showToast(`Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showToast(`Error: ${error.message}`, 'error');
+            } finally {
+                saveBtn.textContent = 'Save Changes';
+                saveBtn.disabled = false;
+            }
+        }
+
+        // Show toast notification
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+
+            // Auto-hide after 4 seconds
+            setTimeout(() => {
+                toast.className = 'toast';
+            }, 4000);
+        }
+
+        // Close modal on overlay click
+        document.getElementById('edit-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Update last refresh timestamp
+        function updateRefreshTime() {
+            const now = new Date();
+            const time = now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('last-refresh').textContent = `Last refresh: ${time}`;
+        }
+
+        // Manual refresh
+        async function manualRefresh() {
+            await Promise.all([loadStats(), loadRules(true)]);
+            updateRefreshTime();
+        }
+
+        // Initialize
+        loadStats();
+        loadRules().then(() => updateRefreshTime());
+    </script>
+</body>
+</html>

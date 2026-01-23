@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connectors - Cloudflare Magic Transit Dashboard</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border-color: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-red: #f85149;
+            --accent-yellow: #d29922;
+            --accent-orange: #f0883e;
+            --accent-purple: #a371f7;
+            --accent-cyan: #39d5d8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #f6821f 0%, #ff6633 50%, #faad3f 100%);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 1.4rem;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .header-subtitle {
+            color: rgba(255,255,255,0.9);
+            font-size: 0.85rem;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-btn {
+            background: white;
+            border: none;
+            color: #d35400;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .back-btn:hover {
+            background: #f8f8f8;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-mini {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            text-align: center;
+            min-width: 140px;
+        }
+
+        .stat-mini-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .stat-mini-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .stat-mini.tunnels .stat-mini-value { color: var(--accent-cyan); }
+        .stat-mini.gre .stat-mini-value { color: var(--accent-orange); }
+        .stat-mini.ipsec .stat-mini-value { color: var(--accent-purple); }
+        .stat-mini.cni .stat-mini-value { color: var(--accent-green); }
+        .stat-mini.healthy .stat-mini-value { color: var(--accent-green); }
+        .stat-mini.degraded .stat-mini-value { color: var(--accent-yellow); }
+        .stat-mini.down .stat-mini-value { color: var(--accent-red); }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background: var(--bg-tertiary);
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .card-title-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-description {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .card-body {
+            padding: 0;
+        }
+
+        .refresh-btn {
+            background: white;
+            border: none;
+            color: #d35400;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .refresh-btn:hover {
+            background: #f8f8f8;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+        }
+
+        .refresh-time {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.9);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: auto;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        th {
+            background: var(--bg-tertiary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-healthy {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--accent-green);
+        }
+
+        .status-degraded {
+            background: rgba(210, 153, 34, 0.2);
+            color: var(--accent-yellow);
+        }
+
+        .status-down {
+            background: rgba(248, 81, 73, 0.2);
+            color: var(--accent-red);
+        }
+
+        .status-unknown {
+            background: rgba(139, 148, 158, 0.2);
+            color: var(--text-secondary);
+        }
+
+        .status-active {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--accent-green);
+        }
+
+        .status-inactive {
+            background: rgba(139, 148, 158, 0.2);
+            color: var(--text-secondary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .type-gre {
+            background: rgba(240, 136, 62, 0.2);
+            color: var(--accent-orange);
+        }
+
+        .type-ipsec {
+            background: rgba(163, 113, 247, 0.2);
+            color: var(--accent-purple);
+        }
+
+        .type-cni {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--accent-green);
+        }
+
+        .ip-address {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-blue);
+            word-break: break-all;
+        }
+
+        .tunnel-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .tunnel-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.2rem;
+        }
+
+        .health-rate {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.2rem;
+        }
+
+        .health-rate.pass-rate {
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        .mtu-value {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
+        .empty-state {
+            padding: 3rem 2rem;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 0.95rem;
+        }
+
+        .loading {
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-state {
+            padding: 2rem;
+            text-align: center;
+            color: var(--accent-red);
+            background: rgba(248, 81, 73, 0.1);
+            border-radius: 8px;
+            margin: 1rem;
+        }
+
+        .bgp-status {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .bgp-state {
+            font-weight: 600;
+        }
+
+        .bgp-tcp {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .section-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .footer {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .footer-logo {
+            height: 24px;
+        }
+
+        .footer-text {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.85);
+        }
+
+        .footer-right {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .footer-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            background: rgba(63, 185, 80, 0.9);
+            color: white;
+        }
+
+        .toast.error {
+            background: rgba(248, 81, 73, 0.9);
+            color: white;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            border-radius: 12px 12px 0 0;
+        }
+
+        .modal-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            border-radius: 0 0 12px 12px;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+        }
+
+        .form-input:disabled {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        .form-static {
+            padding: 0.6rem 0;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4c9aed;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+
+        .btn-primary:disabled {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .detail-value {
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: 'Courier New', monospace;
+            text-align: right;
+        }
+
+        /* Clickable rows */
+        tr.clickable-row {
+            cursor: pointer;
+        }
+
+        tr.clickable-row:hover {
+            background: rgba(88, 166, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <div>
+                <h1>Connectors</h1>
+                <span class="header-subtitle">IPsec/GRE Tunnels & Network Interconnects</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <span class="refresh-time" id="last-refresh">-</span>
+            <button class="refresh-btn" onclick="refreshAll()">Refresh</button>
+            <a href="/" class="back-btn">← Dashboard</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Summary Stats -->
+        <div class="stats-row" id="stats-row">
+            <div class="stat-mini tunnels">
+                <div class="stat-mini-value" id="stat-total-tunnels">-</div>
+                <div class="stat-mini-label">Total Tunnels</div>
+            </div>
+            <div class="stat-mini gre">
+                <div class="stat-mini-value" id="stat-gre-tunnels">-</div>
+                <div class="stat-mini-label">GRE Tunnels</div>
+            </div>
+            <div class="stat-mini ipsec">
+                <div class="stat-mini-value" id="stat-ipsec-tunnels">-</div>
+                <div class="stat-mini-label">IPsec Tunnels</div>
+            </div>
+            <div class="stat-mini cni">
+                <div class="stat-mini-value" id="stat-interconnects">-</div>
+                <div class="stat-mini-label">Interconnects</div>
+            </div>
+            <div class="stat-mini healthy">
+                <div class="stat-mini-value" id="stat-healthy">-</div>
+                <div class="stat-mini-label">Healthy</div>
+            </div>
+            <div class="stat-mini degraded">
+                <div class="stat-mini-value" id="stat-degraded">-</div>
+                <div class="stat-mini-label">Degraded</div>
+            </div>
+            <div class="stat-mini down">
+                <div class="stat-mini-value" id="stat-down">-</div>
+                <div class="stat-mini-label">Down</div>
+            </div>
+        </div>
+
+        <!-- Two Column Layout -->
+        <div class="section-grid">
+            <!-- IPsec/GRE Tunnels Section -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <div class="card-title">IPsec/GRE Tunnels</div>
+                        <div class="card-description">Magic Transit tunnel endpoints for traffic encapsulation</div>
+                    </div>
+                </div>
+                <div class="card-body" id="tunnels-container">
+                    <div class="loading">
+                        <span class="loading-spinner"></span>
+                        Loading tunnels...
+                    </div>
+                </div>
+            </div>
+
+            <!-- CNI Interconnects Section -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <div class="card-title">Network Interconnects (CNI)</div>
+                        <div class="card-description">Direct private connections to Cloudflare network</div>
+                    </div>
+                </div>
+                <div class="card-body" id="interconnects-container">
+                    <div class="loading">
+                        <span class="loading-spinner"></span>
+                        Loading interconnects...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Tunnel Detail Modal -->
+    <div id="tunnel-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="tunnel-modal-title">Tunnel Details</h2>
+                <button class="modal-close" onclick="closeTunnelModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="tunnel-modal-body">
+                <!-- Content populated by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeTunnelModal()">Close</button>
+                <button class="btn btn-primary" onclick="saveTunnelChanges()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CNI Detail Modal -->
+    <div id="cni-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="cni-modal-title">Interconnect Details</h2>
+                <button class="modal-close" onclick="closeCniModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="cni-modal-body">
+                <!-- Content populated by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCniModal()">Close</button>
+                <button class="btn btn-primary" onclick="saveCniChanges()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-left">
+            <img src="/static/images/Goline_500_160_trasparente.png" alt="GOLINE" class="footer-logo">
+            <span class="footer-text">GOLINE SOC - Magic Transit Dashboard v{{ version }}</span>
+        </div>
+        <div class="footer-right">
+            <span class="footer-dot"></span>
+            <span>Auto-refresh 30s</span>
+        </div>
+    </footer>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        let autoRefreshInterval;
+
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => {
+                toast.className = 'toast';
+            }, 3000);
+        }
+
+        // Format timestamp
+        function formatTime(timestamp) {
+            if (!timestamp) return '-';
+            const date = new Date(timestamp);
+            return date.toLocaleString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        // Format time ago
+        function timeAgo(timestamp) {
+            if (!timestamp) return '-';
+            const now = new Date();
+            const then = new Date(timestamp);
+            const diff = Math.floor((now - then) / 1000);
+
+            if (diff < 60) return `${diff}s ago`;
+            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+            return `${Math.floor(diff / 86400)}d ago`;
+        }
+
+        // Get health status class
+        function getHealthStatus(state) {
+            if (!state) return { class: 'unknown', label: 'Unknown', icon: '' };
+
+            const stateLower = state.toString().toLowerCase();
+            if (stateLower === '1' || stateLower === 'healthy' || stateLower === 'up' || stateLower === 'active') {
+                return { class: 'healthy', label: 'Healthy', icon: '' };
+            } else if (stateLower === '0.5' || stateLower === 'degraded') {
+                return { class: 'degraded', label: 'Degraded', icon: '' };
+            } else if (stateLower === '0' || stateLower === 'down' || stateLower === 'inactive') {
+                return { class: 'down', label: 'Down', icon: '' };
+            }
+            return { class: 'unknown', label: state, icon: '' };
+        }
+
+        // Convert health check rate to human-readable interval
+        function formatHealthCheckRate(rate) {
+            if (!rate) return null;
+            const rateMap = {
+                'low': 'Check every 60s',
+                'mid': 'Check every 10s',
+                'high': 'Check every 1s'
+            };
+            return rateMap[rate.toLowerCase()] || `Check: ${rate}`;
+        }
+
+        // Store tunnels data for modal access
+        let tunnelsData = [];
+        let interconnectsData = [];
+        let currentTunnel = null;
+        let currentCni = null;
+
+        // Render tunnels table
+        function renderTunnelsTable(tunnels) {
+            tunnelsData = tunnels || [];
+
+            if (!tunnels || tunnels.length === 0) {
+                return `
+                    <div class="empty-state">
+                        <div class="empty-state-icon"></div>
+                        <div class="empty-state-text">No tunnels configured</div>
+                    </div>
+                `;
+            }
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Cloudflare Endpoint</th>
+                            <th>Customer Endpoint</th>
+                            <th>Health</th>
+                            <th>BGP Status</th>
+                            <th>MTU</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            for (const tunnel of tunnels) {
+                const health = getHealthStatus(tunnel.health_status);
+                const typeBadge = tunnel.type === 'gre'
+                    ? '<span class="type-badge type-gre">GRE</span>'
+                    : '<span class="type-badge type-ipsec">IPsec</span>';
+
+                const bgpState = tunnel.bgp_status?.state || '-';
+                const bgpTcp = tunnel.bgp_status?.tcp_established ? 'TCP Established' : 'TCP Not Established';
+
+                html += `
+                    <tr class="clickable-row" ondblclick="openTunnelModal('${tunnel.id}')">
+                        <td>
+                            <div class="tunnel-name">${tunnel.name || '-'}</div>
+                            ${tunnel.description ? `<div class="tunnel-desc">${tunnel.description}</div>` : ''}
+                        </td>
+                        <td>${typeBadge}</td>
+                        <td><span class="ip-address">${tunnel.cloudflare_endpoint || '-'}</span></td>
+                        <td><span class="ip-address">${tunnel.customer_endpoint || '-'}</span></td>
+                        <td>
+                            <span class="status-badge status-${health.class}">
+                                <span class="status-dot"></span>
+                                ${health.label}
+                            </span>
+                            ${tunnel.pass_rate != null ? `<div class="health-rate pass-rate">${tunnel.pass_rate}% passed (1h)</div>` : ''}
+                            ${tunnel.health_check?.rate ? `<div class="health-rate">${formatHealthCheckRate(tunnel.health_check.rate)}</div>` : ''}
+                        </td>
+                        <td>
+                            <div class="bgp-status">
+                                <span class="bgp-state">${bgpState}</span>
+                                ${tunnel.bgp_status ? `<span class="bgp-tcp">${bgpTcp}</span>` : ''}
+                            </div>
+                        </td>
+                        <td><span class="mtu-value">${tunnel.mtu || '-'}</span></td>
+                    </tr>
+                `;
+            }
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+        // Render interconnects table
+        function renderInterconnectsTable(interconnects) {
+            interconnectsData = interconnects || [];
+
+            if (!interconnects || interconnects.length === 0) {
+                return `
+                    <div class="empty-state">
+                        <div class="empty-state-icon"></div>
+                        <div class="empty-state-text">No interconnects configured</div>
+                    </div>
+                `;
+            }
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Facility</th>
+                            <th>Speed</th>
+                            <th>Status</th>
+                            <th>P2P (Cloudflare)</th>
+                            <th>P2P (Customer)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            for (const cni of interconnects) {
+                const health = getHealthStatus(cni.status);
+
+                html += `
+                    <tr class="clickable-row" ondblclick="openCniModal('${cni.id}')">
+                        <td>
+                            <div class="tunnel-name">${cni.name || '-'}</div>
+                            ${cni.description ? `<div class="tunnel-desc">${cni.description}</div>` : ''}
+                        </td>
+                        <td>${cni.facility || '-'}</td>
+                        <td>${cni.speed || '-'}</td>
+                        <td>
+                            <span class="status-badge status-${health.class}">
+                                <span class="status-dot"></span>
+                                ${health.label}
+                            </span>
+                            ${cni.pass_rate != null ? `<div class="health-rate pass-rate">${cni.pass_rate}% passed (1h)</div>` : ''}
+                        </td>
+                        <td><span class="ip-address">${cni.p2p_cloudflare || '-'}</span></td>
+                        <td><span class="ip-address">${cni.p2p_customer || '-'}</span></td>
+                    </tr>
+                `;
+            }
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+        // Load tunnels
+        async function loadTunnels() {
+            try {
+                const response = await fetch('/api/connectors/tunnels');
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('tunnels-container').innerHTML = renderTunnelsTable(data.tunnels);
+
+                    // Update stats
+                    document.getElementById('stat-gre-tunnels').textContent = data.gre_count || 0;
+                    document.getElementById('stat-ipsec-tunnels').textContent = data.ipsec_count || 0;
+                    document.getElementById('stat-total-tunnels').textContent = (data.gre_count || 0) + (data.ipsec_count || 0);
+
+                    // Health stats
+                    let healthy = 0, degraded = 0, down = 0;
+                    for (const t of data.tunnels || []) {
+                        const state = t.health_status?.toString().toLowerCase();
+                        if (state === '1' || state === 'healthy' || state === 'up') healthy++;
+                        else if (state === '0.5' || state === 'degraded') degraded++;
+                        else if (state === '0' || state === 'down') down++;
+                    }
+                    document.getElementById('stat-healthy').textContent = healthy;
+                    document.getElementById('stat-degraded').textContent = degraded;
+                    document.getElementById('stat-down').textContent = down;
+                } else {
+                    document.getElementById('tunnels-container').innerHTML = `
+                        <div class="error-state">Error: ${data.error || 'Failed to load tunnels'}</div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('tunnels-container').innerHTML = `
+                    <div class="error-state">Error: ${error.message}</div>
+                `;
+            }
+        }
+
+        // Load interconnects
+        async function loadInterconnects() {
+            try {
+                const response = await fetch('/api/connectors/interconnects');
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('interconnects-container').innerHTML = renderInterconnectsTable(data.interconnects);
+                    document.getElementById('stat-interconnects').textContent = data.total || 0;
+                } else {
+                    document.getElementById('interconnects-container').innerHTML = `
+                        <div class="error-state">Error: ${data.error || 'Failed to load interconnects'}</div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('interconnects-container').innerHTML = `
+                    <div class="error-state">Error: ${error.message}</div>
+                `;
+            }
+        }
+
+        // Refresh all data
+        async function refreshAll() {
+            document.getElementById('last-refresh').textContent = 'Refreshing...';
+
+            await Promise.all([
+                loadTunnels(),
+                loadInterconnects()
+            ]);
+
+            const now = new Date();
+            document.getElementById('last-refresh').textContent = `Updated ${now.toLocaleTimeString('en-GB')}`;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshAll();
+
+            // Auto-refresh every 30 seconds
+            autoRefreshInterval = setInterval(refreshAll, 30000);
+        });
+
+        // Cleanup on page leave
+        window.addEventListener('beforeunload', () => {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+        });
+
+        // ====== TUNNEL MODAL FUNCTIONS ======
+
+        function openTunnelModal(tunnelId) {
+            const tunnel = tunnelsData.find(t => t.id === tunnelId);
+            if (!tunnel) {
+                showToast('Tunnel not found', 'error');
+                return;
+            }
+
+            currentTunnel = tunnel;
+            const typeName = tunnel.type === 'gre' ? 'GRE' : 'IPsec';
+            document.getElementById('tunnel-modal-title').textContent = `${typeName} Tunnel: ${tunnel.name}`;
+
+            const health = getHealthStatus(tunnel.health_status);
+            const bgpState = tunnel.bgp_status?.state || '-';
+            const healthCheck = tunnel.health_check || {};
+            const currentRate = healthCheck.rate || 'mid';
+            const healthEnabled = healthCheck.enabled !== false;
+
+            let html = `
+                <div class="detail-row">
+                    <span class="detail-label">Type</span>
+                    <span class="detail-value">${typeName}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Cloudflare Endpoint</span>
+                    <span class="detail-value">${tunnel.cloudflare_endpoint || '-'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Health Status</span>
+                    <span class="detail-value">${health.label}</span>
+                </div>
+                ${tunnel.pass_rate != null ? `
+                <div class="detail-row">
+                    <span class="detail-label">Health Check Pass Rate (1h)</span>
+                    <span class="detail-value" style="color: var(--accent-green)">${tunnel.pass_rate}%</span>
+                </div>
+                ` : ''}
+                <div class="detail-row">
+                    <span class="detail-label">BGP Status</span>
+                    <span class="detail-value">${bgpState}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Tunnel ID</span>
+                    <span class="detail-value" style="font-size: 0.75rem">${tunnel.id}</span>
+                </div>
+
+                <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1rem 0;">
+                <div style="font-size: 0.85rem; color: var(--accent-blue); margin-bottom: 0.75rem; font-weight: 600;">Editable Fields</div>
+
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <input type="text" class="form-input" id="tunnel-description"
+                           value="${tunnel.description || ''}"
+                           placeholder="Enter tunnel description...">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Customer Endpoint IP</label>
+                    <input type="text" class="form-input" id="tunnel-customer-endpoint"
+                           value="${tunnel.customer_endpoint || ''}"
+                           placeholder="e.g., 212.203.88.170"
+                           pattern="^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">MTU</label>
+                    <input type="number" class="form-input" id="tunnel-mtu"
+                           value="${tunnel.mtu || 1476}"
+                           min="576" max="1500">
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">GRE default: 1476, IPsec default: 1436</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Health Check Rate</label>
+                    <select class="form-input" id="tunnel-health-rate">
+                        <option value="low" ${currentRate === 'low' ? 'selected' : ''}>Low (every 60s)</option>
+                        <option value="mid" ${currentRate === 'mid' ? 'selected' : ''}>Mid (every 10s)</option>
+                        <option value="high" ${currentRate === 'high' ? 'selected' : ''}>High (every 1s)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="tunnel-health-enabled" ${healthEnabled ? 'checked' : ''}
+                           style="width: auto; margin: 0;">
+                    <label for="tunnel-health-enabled" style="margin: 0; font-size: 0.85rem; color: var(--text-primary); cursor: pointer;">
+                        Health Check Enabled
+                    </label>
+                </div>
+            `;
+
+            document.getElementById('tunnel-modal-body').innerHTML = html;
+            document.getElementById('tunnel-modal').classList.add('active');
+        }
+
+        function closeTunnelModal() {
+            document.getElementById('tunnel-modal').classList.remove('active');
+            currentTunnel = null;
+        }
+
+        async function saveTunnelChanges() {
+            if (!currentTunnel) return;
+
+            const description = document.getElementById('tunnel-description').value;
+            const customerEndpoint = document.getElementById('tunnel-customer-endpoint').value;
+            const mtu = parseInt(document.getElementById('tunnel-mtu').value) || 1476;
+            const healthRate = document.getElementById('tunnel-health-rate').value;
+            const healthEnabled = document.getElementById('tunnel-health-enabled').checked;
+
+            // Validate IP
+            const ipPattern = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/;
+            if (customerEndpoint && !ipPattern.test(customerEndpoint)) {
+                showToast('Invalid Customer Endpoint IP format', 'error');
+                return;
+            }
+
+            // Validate MTU
+            if (mtu < 576 || mtu > 1500) {
+                showToast('MTU must be between 576 and 1500', 'error');
+                return;
+            }
+
+            const saveBtn = document.querySelector('#tunnel-modal .btn-primary');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+
+            try {
+                const response = await fetch(`/api/connectors/tunnel/${currentTunnel.id}/update`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        description: description,
+                        customer_endpoint: customerEndpoint,
+                        mtu: mtu,
+                        health_check: {
+                            rate: healthRate,
+                            enabled: healthEnabled
+                        }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('Tunnel updated successfully', 'success');
+                    closeTunnelModal();
+                    refreshAll();
+                } else {
+                    showToast(data.error || 'Failed to update tunnel', 'error');
+                }
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Changes';
+            }
+        }
+
+        // ====== CNI MODAL FUNCTIONS ======
+
+        function openCniModal(cniId) {
+            const cni = interconnectsData.find(c => c.id === cniId);
+            if (!cni) {
+                showToast('Interconnect not found', 'error');
+                return;
+            }
+
+            currentCni = cni;
+            document.getElementById('cni-modal-title').textContent = `CNI: ${cni.name}`;
+
+            const health = getHealthStatus(cni.status);
+
+            let html = `
+                <div class="detail-row">
+                    <span class="detail-label">Facility</span>
+                    <span class="detail-value">${cni.facility || '-'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Speed</span>
+                    <span class="detail-value">${cni.speed || '-'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Status</span>
+                    <span class="detail-value">${health.label}</span>
+                </div>
+                ${cni.pass_rate != null ? `
+                <div class="detail-row">
+                    <span class="detail-label">Health Check Pass Rate (1h)</span>
+                    <span class="detail-value" style="color: var(--accent-green)">${cni.pass_rate}%</span>
+                </div>
+                ` : ''}
+                <div class="detail-row">
+                    <span class="detail-label">P2P (Cloudflare)</span>
+                    <span class="detail-value">${cni.p2p_cloudflare || '-'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">P2P (Customer)</span>
+                    <span class="detail-value">${cni.p2p_customer || '-'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">CNI ID</span>
+                    <span class="detail-value" style="font-size: 0.75rem">${cni.id}</span>
+                </div>
+                <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1rem 0;">
+                <div class="form-group">
+                    <label class="form-label">Description (editable)</label>
+                    <input type="text" class="form-input" id="cni-description"
+                           value="${cni.description || ''}"
+                           placeholder="Enter interconnect description...">
+                </div>
+            `;
+
+            document.getElementById('cni-modal-body').innerHTML = html;
+            document.getElementById('cni-modal').classList.add('active');
+        }
+
+        function closeCniModal() {
+            document.getElementById('cni-modal').classList.remove('active');
+            currentCni = null;
+        }
+
+        async function saveCniChanges() {
+            if (!currentCni) return;
+
+            const description = document.getElementById('cni-description').value;
+            const saveBtn = document.querySelector('#cni-modal .btn-primary');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+
+            try {
+                const response = await fetch(`/api/connectors/cni/${currentCni.id}/update`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ description: description })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('Interconnect updated successfully', 'success');
+                    closeCniModal();
+                    refreshAll();
+                } else {
+                    showToast(data.error || 'Failed to update interconnect', 'error');
+                }
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Changes';
+            }
+        }
+
+        // Close modals on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeTunnelModal();
+                closeCniModal();
+            }
+        });
+
+        // Close modals on backdrop click
+        document.getElementById('tunnel-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'tunnel-modal') closeTunnelModal();
+        });
+        document.getElementById('cni-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'cni-modal') closeCniModal();
+        });
+    </script>
+</body>
+</html>

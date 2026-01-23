@@ -1,0 +1,92 @@
+# ============================================
+# Cloudflare Magic Transit Integration
+# .gitignore - Sensitive files exclusion
+# ============================================
+
+# ===================
+# CONFIGURATION FILES
+# ===================
+# Contains API tokens, secrets, account IDs
+config/settings.json
+config/prefix_mapping.json
+config/auth.json
+docs/CREDENTIALS_AND_CONFIG.md
+
+# ===================
+# DATABASE
+# ===================
+# Contains attack events, webhook data, IPs
+db/*.db
+db/*.db-journal
+db/*.db-wal
+db/*.db-shm
+
+# ===================
+# LOGS
+# ===================
+# Contains webhook payloads with sensitive data
+logs/*.log
+logs/webhooks/*.json
+
+# ===================
+# BACKUPS
+# ===================
+backup/
+
+# ===================
+# PYTHON
+# ===================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+ENV/
+env/
+
+# ===================
+# IDE
+# ===================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# ===================
+# OS
+# ===================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ===================
+# TEMPORARY
+# ===================
+*.tmp
+*.temp
+*.bak
+*.old

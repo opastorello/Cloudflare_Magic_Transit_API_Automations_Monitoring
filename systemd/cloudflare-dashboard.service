@@ -1,0 +1,15 @@
+[Unit]
+Description=Cloudflare Magic Transit Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/Cloudflare_MT_Integration/dashboard
+ExecStart=/usr/bin/python3 /root/Cloudflare_MT_Integration/dashboard/app.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

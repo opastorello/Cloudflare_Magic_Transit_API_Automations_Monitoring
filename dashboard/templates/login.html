@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Cloudflare Magic Transit Dashboard</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border-color: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-red: #f85149;
+            --accent-orange: #f0883e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .login-logo img {
+            height: 40px;
+        }
+
+        .login-logo .divider {
+            width: 1px;
+            height: 30px;
+            background: var(--border-color);
+        }
+
+        .login-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .login-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .login-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, #f6821f 0%, #ff6633 100%);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(246, 130, 31, 0.4);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .error-message {
+            background: rgba(248, 81, 73, 0.15);
+            border: 1px solid var(--accent-red);
+            color: var(--accent-red);
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+            text-align: center;
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.85);
+        }
+
+        .login-footer a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Cloudflare Logo SVG */
+        .cf-logo {
+            height: 36px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="login-logo">
+                <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IiB2aWV3Qm94PSIwIDAgMjUyIDExNS4zIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAyNTIgMTE1LjM7IiB4bWw6c3BhY2U9InByZXNlcnZlIj4KPHN0eWxlIHR5cGU9InRleHQvY3NzIj4uc3Qye2ZpbGw6I0Y0ODIyMDt9LnN0M3tmaWxsOiNGQkFENDA7fS5zdDR7ZmlsbDojNTY1NzVCO308L3N0eWxlPgo8Zz48cG9seWdvbiBmaWxsPSIjRkZGIiBwb2ludHM9IjIwOC41LDQ1LjUgMTk4LjEsNDMgMTk2LjQsNDIuMyAxNDguNyw0Mi43IDE0OC43LDY1LjcgMjA4LjYsNjUuOCIvPjxnPjxwYXRoIGNsYXNzPSJzdDIiIGQ9Ik0xODkuMSw2My42YzAuNS0xLjksMC4zLTMuNi0wLjYtNC45Yy0wLjgtMS4yLTIuMi0xLjktMy45LTEuOWwtMzIuMi0wLjRjLTAuMiwwLTAuNC0wLjEtMC41LTAuM2MtMC4xLTAuMi0wLjEtMC40LTAuMS0wLjZjMC4xLTAuMywwLjQtMC42LDAuNy0wLjZsMzIuNS0wLjRjMy45LTAuMiw4LTMuMyw5LjUtNy4xbDEuOS00LjhjMC4xLTAuMiwwLjEtMC40LDAuMS0wLjZjLTIuMS05LjUtMTAuNS0xNi41LTIwLjYtMTYuNWMtOS4zLDAtMTcuMiw2LTIwLDE0LjNjLTEuOC0xLjQtNC4yLTIuMS02LjctMS44Yy00LjUsMC40LTgsNC04LjUsOC41Yy0wLjEsMS4yLDAsMi4zLDAuMiwzLjNjLTcuMywwLjItMTMuMSw2LjItMTMuMSwxMy41YzAsMC43LDAuMSwxLjMsMC4xLDJjMCwwLjMsMC4zLDAuNSwwLjYsMC41bDU5LjQsMGMwLjMsMCwwLjctMC4yLDAuOC0wLjZMMTg5LjEsNjMuNnoiLz48cGF0aCBjbGFzcz0ic3QzIiBkPSJNMTk5LjMsNDIuOWMtMC4zLDAtMC42LDAtMC45LDBjLTAuMiwwLTAuNCwwLjItMC41LDAuNGwtMS4zLDQuNGMtMC41LDEuOS0wLjMsMy42LDAuNiw0LjljMC44LDEuMiwyLjIsMS45LDMuOSwxLjlsNi45LDAuNGMwLjIsMCwwLjQsMC4xLDAuNSwwLjNjMC4xLDAuMiwwLjEsMC40LDAuMSwwLjZjLTAuMSwwLjMtMC40LDAuNi0wLjcsMC42bC03LjEsMC40Yy0zLjksMC4yLTgsMy4zLTkuNSw3LjFsLTAuNSwxLjNjLTAuMSwwLjIsMC4xLDAuNSwwLjQsMC41aDI0LjVjMC4zLDAsMC42LTAuMiwwLjYtMC41YzAuNC0xLjUsMC43LTMuMSwwLjctNC44QzIxNi45LDUwLjgsMjA5LDQyLjksMTk5LjMsNDIuOSIvPjxwYXRoIGNsYXNzPSJzdDQiIGQ9Ik0yMTkuNCw3Ni4xYy0wLjksMC0xLjYtMC43LTEuNi0xLjZjMC0wLjksMC43LTEuNiwxLjYtMS42YzAuOSwwLDEuNiwwLjcsMS42LDEuNkMyMjAuOSw3NS40LDIyMC4yLDc2LjEsMjE5LjQsNzYuMSBNMjE5LjQsNzMuM2MtMC43LDAtMS4zLDAuNi0xLjMsMS4zYzAsMC43LDAuNiwxLjMsMS4zLDEuM2MwLjcsMCwxLjMtMC42LDEuMy0xLjNDMjIwLjYsNzMuOCwyMjAuMSw3My4zLDIxOS40LDczLjMgTTIyMC4yLDc1LjRoLTAuNGwtMC4zLTAuNkgyMTl2MC42aC0wLjN2LTEuN2gwLjhjMC40LDAsMC42LDAuMiwwLjYsMC42YzAsMC4yLTAuMSwwLjUtMC40LDAuNUwyMjAuMiw3NS40eiBNMjE5LjUsNzQuNWMwLjEsMCwwLjMtMC4xLDAuMy0wLjNjMC0wLjItMC4xLTAuMy0wLjMtMC4zSDIxOXYwLjVIMjE5LjV6Ii8+PHBvbHlnb24gY2xhc3M9InN0NCIgcG9pbnRzPSI1My4zLDcyLjggNTcuNCw3Mi44IDU3LjQsODMuOSA2NC41LDgzLjkgNjQuNSw4Ny41IDUzLjMsODcuNSIvPjxwYXRoIGNsYXNzPSJzdDQiIGQ9Ik02OC43LDgwLjJMNjguNyw4MC4yYzAtNC4zLDMuNC03LjcsNy45LTcuN2M0LjUsMCw3LjksMy40LDcuOSw3LjZ2MGMwLDQuMi0zLjQsNy42LTcuOSw3LjZDNzIsODcuNyw2OC43LDg0LjQsNjguNyw4MC4yIE04MC4zLDgwLjJMODAuMyw4MC4yYzAtMi4yLTEuNS00LTMuOC00Yy0yLjIsMC0zLjcsMS44LTMuNywzLjl2MGMwLDIuMSwxLjUsNCwzLjcsNEM3OC44LDg0LjEsODAuMyw4Mi4zLDgwLjMsODAuMiIvPjxwYXRoIGNsYXNzPSJzdDQiIGQ9Ik04OS40LDgxdi04LjJoNC4xdjguMWMwLDIuMSwxLjEsMy4xLDIuNywzLjFzMi43LTEsMi43LTN2LTguM2g0LjF2OC4xYzAsNC43LTIuNyw2LjgtNi45LDYuOEM5Miw4Ny43LDg5LjQsODUuNiw4OS40LDgxIi8+PHBhdGggY2xhc3M9InN0NCIgZD0iTTEwOS4zLDcyLjhoNS43YzUuMiwwLDguMywzLDguMyw3LjJ2MGMwLDQuMi0zLjEsNy40LTguNCw3LjRoLTUuNlY3Mi44eiBNMTE1LDgzLjljMi40LDAsNC0xLjMsNC0zLjd2MGMwLTIuMy0xLjYtMy43LTQtMy43aC0xLjd2Ny41SDExNXoiLz48cG9seWdvbiBjbGFzcz0ic3Q0IiBwb2ludHM9IjEyOS4xLDcyLjggMTQwLjgsNzIuOCAxNDAuOCw3Ni40IDEzMy4yLDc2LjQgMTMzLjIsNzguOCAxNDAuMSw3OC44IDE0MC4xLDgyLjIgMTMzLjIsODIuMiAxMzMuMiw4Ny41IDEyOS4xLDg3LjUiLz48cG9seWdvbiBjbGFzcz0ic3Q0IiBwb2ludHM9IjE0Ni41LDcyLjggMTUwLjYsNzIuOCAxNTAuNiw4My45IDE1Ny43LDgzLjkgMTU3LjcsODcuNSAxNDYuNSw4Ny41Ii8+PHBhdGggY2xhc3M9InN0NCIgZD0iTTE2OC4zLDcyLjdoMy45bDYuMiwxNC44aC00LjRsLTEuMS0yLjZoLTUuN2wtMSwyLjZIMTYyTDE2OC4zLDcyLjd6IE0xNzEuOCw4MS43bC0xLjYtNC4ybC0xLjcsNC4ySDE3MS44eiIvPjxwYXRoIGNsYXNzPSJzdDQiIGQ9Ik0xODMuNyw3Mi44aDYuOWMyLjIsMCwzLjgsMC42LDQuOCwxLjZjMC45LDAuOCwxLjMsMiwxLjMsMy40djBjMCwyLjItMS4yLDMuNy0zLDQuNWwzLjUsNS4xaC00LjdsLTMtNC40aC0xLjh2NC40aC00LjFWNzIuOHogTTE5MC40LDc5LjhjMS40LDAsMi4yLTAuNywyLjItMS43djBjMC0xLjItMC44LTEuNy0yLjItMS43aC0yLjd2My41SDE5MC40eiIvPjxwb2x5Z29uIGNsYXNzPSJzdDQiIHBvaW50cz0iMjAyLjUsNzIuOCAyMTQuMyw3Mi44IDIxNC4zLDc2LjMgMjA2LjYsNzYuMyAyMDYuNiw3OC41IDIxMy42LDc4LjUgMjEzLjYsODEuNyAyMDYuNiw4MS43IDIwNi42LDg0IDIxNC40LDg0IDIxNC40LDg3LjUgMjAyLjUsODcuNSIvPjxwYXRoIGNsYXNzPSJzdDQiIGQ9Ik00NC40LDgxLjljLTAuNiwxLjMtMS44LDIuMi0zLjQsMi4yYy0yLjIsMC0zLjctMS44LTMuNy00djBjMC0yLjEsMS41LTMuOSwzLjctMy45YzEuNywwLDIuOSwxLDMuNSwyLjRoNC4zYy0wLjctMy41LTMuOC02LjEtNy43LTYuMWMtNC41LDAtNy45LDMuNC03LjksNy42djBjMCw0LjIsMy4zLDcuNiw3LjksNy42YzMuOSwwLDYuOS0yLjUsNy43LTUuOUg0NC40eiIvPjwvZz48L2c+Cjwvc3ZnPg==" alt="Cloudflare" class="cf-logo">
+                <div class="divider"></div>
+                <img src="/static/images/Goline_400_100_trasparente_white.png?v=3" alt="GOLINE" style="height: 32px;">
+            </div>
+            <h1 class="login-title">Magic Transit Dashboard</h1>
+            <p class="login-subtitle">DDoS Protection & BGP Management</p>
+        </div>
+
+        <div class="login-card">
+            {% if error %}
+            <div class="error-message">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST" action="/login" id="login-form">
+                <div class="form-group">
+                    <label class="form-label" for="username">Username</label>
+                    <input type="text" id="username" name="username" class="form-input" placeholder="Enter username" required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-input" placeholder="Enter password" required>
+                </div>
+
+                <button type="submit" class="btn-login" id="btn-submit">Sign In</button>
+            </form>
+        </div>
+
+        <div class="login-footer">
+            GOLINE SOC &middot; Magic Transit Dashboard v{{ version }}
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            const btn = document.getElementById('btn-submit');
+            btn.disabled = true;
+            btn.textContent = 'Signing in...';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "185.54.80.0/24": {
+    "parent_prefix_id": "YOUR_PARENT_PREFIX_ID",
+    "bgp_prefix_id": "YOUR_BGP_PREFIX_ID",
+    "description": "BGP"
+  },
+  "185.54.81.0/24": {
+    "parent_prefix_id": "YOUR_PARENT_PREFIX_ID",
+    "bgp_prefix_id": "YOUR_BGP_PREFIX_ID",
+    "description": "DMZ"
+  },
+  "185.54.82.0/24": {
+    "parent_prefix_id": "YOUR_PARENT_PREFIX_ID",
+    "bgp_prefix_id": "YOUR_BGP_PREFIX_ID",
+    "description": "DMZ-EXT"
+  },
+  "185.54.83.0/24": {
+    "parent_prefix_id": "YOUR_PARENT_PREFIX_ID",
+    "bgp_prefix_id": "YOUR_BGP_PREFIX_ID",
+    "description": "DMZ-EXT2"
+  },
+  "2a02:4460:1::/48": {
+    "parent_prefix_id": "YOUR_PARENT_PREFIX_ID",
+    "bgp_prefix_id": "YOUR_BGP_PREFIX_ID",
+    "description": "DMZv6"
+  }
+}

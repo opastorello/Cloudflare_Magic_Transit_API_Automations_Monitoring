@@ -1,0 +1,5 @@
+{
+  "username": "admin",
+  "password_hash": "$2b$12$EXAMPLE_BCRYPT_HASH_HERE",
+  "last_changed": "2026-01-21T00:00:00Z"
+}

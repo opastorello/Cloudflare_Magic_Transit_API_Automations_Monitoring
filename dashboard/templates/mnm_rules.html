@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MNM Rules Manager - Cloudflare Magic Transit Dashboard</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border-color: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-red: #f85149;
+            --accent-yellow: #d29922;
+            --accent-orange: #f0883e;
+            --accent-purple: #a371f7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #f6821f 0%, #ff6633 50%, #faad3f 100%);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 1.4rem;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .header-subtitle {
+            color: rgba(255,255,255,0.9);
+            font-size: 0.85rem;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-btn {
+            background: white;
+            border: none;
+            color: #d35400;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .back-btn:hover {
+            background: #f8f8f8;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-mini {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            text-align: center;
+            min-width: 120px;
+            text-decoration: none;
+        }
+
+        .stat-mini.active {
+            border-color: var(--accent-orange);
+            background: rgba(240, 136, 62, 0.1);
+        }
+
+        .stat-mini-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .stat-mini-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .stat-mini.total .stat-mini-value { color: var(--accent-blue); }
+        .stat-mini.threshold .stat-mini-value { color: var(--accent-orange); }
+        .stat-mini.sflow .stat-mini-value { color: var(--accent-purple); }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background: var(--bg-tertiary);
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .card-title-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .card-description {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .card-body {
+            padding: 0;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+
+        .card-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .card-body::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        .card-body::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            color: var(--text-secondary);
+            font-weight: 500;
+            background: var(--bg-tertiary);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        tbody tr {
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+
+        tbody tr:active {
+            background: var(--border-color);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--accent-green);
+        }
+
+        .badge-warning {
+            background: rgba(210, 153, 34, 0.2);
+            color: var(--accent-yellow);
+        }
+
+        .badge-info {
+            background: rgba(88, 166, 255, 0.2);
+            color: var(--accent-blue);
+        }
+
+        .badge-orange {
+            background: rgba(240, 136, 62, 0.2);
+            color: var(--accent-orange);
+        }
+
+        .badge-purple {
+            background: rgba(163, 113, 247, 0.2);
+            color: var(--accent-purple);
+        }
+
+        .badge-danger {
+            background: rgba(248, 81, 73, 0.2);
+            color: var(--accent-red);
+        }
+
+        .prefix-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+
+        .prefix-tag {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-family: monospace;
+            color: var(--text-secondary);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            color: var(--accent-red);
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: rgba(255,255,255,0.85);
+            font-size: 0.875rem;
+        }
+
+        .footer a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        .btn-action {
+            padding: 0.3rem 0.65rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-edit {
+            background: var(--accent-blue);
+            color: white;
+            margin-right: 0.5rem;
+        }
+
+        .btn-edit:hover {
+            background: #4c9aed;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+
+        .btn-delete {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #e04040;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+
+        .btn-add {
+            background: var(--accent-green);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-add:hover {
+            background: #2ea043;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            background: var(--bg-tertiary);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .form-select option {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .modal-footer {
+            background: var(--bg-tertiary);
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1.25rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-cancel {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-cancel:hover {
+            background: var(--border-color);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+
+        .btn-save {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #4a9eff;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+
+        .btn-save:disabled {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .btn-danger {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #da3633;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.875rem;
+            z-index: 1001;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success {
+            background: var(--accent-green);
+            display: block;
+        }
+
+        .toast.error {
+            background: var(--accent-red);
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .stats-row {
+                justify-content: center;
+            }
+            .prefix-list {
+                max-width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <div>
+                <h1>📋 MNM Rules Manager</h1>
+                <span class="header-subtitle">Magic Network Monitoring - Auto-advertisement triggers</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <span style="color: rgba(255,255,255,0.8); font-size: 0.75rem;" id="last-refresh">Last refresh: --:--:--</span>
+            <button class="back-btn" onclick="manualRefresh()" style="padding: 0.4rem 0.8rem;">↻ Refresh</button>
+            <a href="/" class="back-btn">← Dashboard</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="stats-row">
+            <div class="stat-mini total active">
+                <div class="stat-mini-value" id="count-total">-</div>
+                <div class="stat-mini-label">Total Rules</div>
+            </div>
+            <div class="stat-mini threshold">
+                <div class="stat-mini-value" id="count-threshold">-</div>
+                <div class="stat-mini-label">Threshold (BPS/PPS)</div>
+            </div>
+            <div class="stat-mini sflow">
+                <div class="stat-mini-value" id="count-sflow">-</div>
+                <div class="stat-mini-label">Advanced DDoS (sFlow)</div>
+            </div>
+        </div>
+
+        <!-- Threshold Rules -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title-group">
+                    <span class="card-title">📊 Threshold Rules (BPS/PPS)</span>
+                    <span class="card-description">Trigger BGP advertisement when traffic exceeds a fixed bandwidth (Gbps) or packet rate (kpps) for a specified duration</span>
+                </div>
+                <button class="btn-add" onclick="openAddModal('threshold')">+ Add Rule</button>
+            </div>
+            <div class="card-body" id="threshold-body">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    Loading rules...
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced DDoS Rules -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title-group">
+                    <span class="card-title">🔬 Advanced DDoS Rules (sFlow)</span>
+                    <span class="card-description">Automatically detect attack patterns using sFlow fingerprinting - no manual thresholds needed</span>
+                </div>
+                <button class="btn-add" onclick="openAddModal('sflow')">+ Add Rule</button>
+            </div>
+            <div class="card-body" id="sflow-body">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    Loading rules...
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <a href="/">← Back to Dashboard</a> | GOLINE SOC · Magic Transit Dashboard v{{ version }}
+    </footer>
+
+    <!-- Add Rule Modal -->
+    <div class="modal-overlay" id="add-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title" id="modal-title">Add Rule</span>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" id="type-group">
+                    <label class="form-label">Rule Type</label>
+                    <select class="form-select" id="modal-type" onchange="updateModalFields()">
+                        <option value="bps">Bandwidth Threshold (BPS)</option>
+                        <option value="pps">Packet Threshold (PPS)</option>
+                        <option value="sflow">Advanced DDoS (sFlow)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Prefix</label>
+                    <select class="form-select" id="modal-prefix">
+                        <option value="185.54.80.0/24">185.54.80.0/24 (BGP)</option>
+                        <option value="185.54.81.0/24">185.54.81.0/24 (DMZ)</option>
+                        <option value="185.54.82.0/24">185.54.82.0/24 (DMZ-EXT)</option>
+                        <option value="185.54.83.0/24">185.54.83.0/24 (DMZ-EXT2)</option>
+                        <option value="2a02:4460:1::/48">2a02:4460:1::/48 (IPv6)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="threshold-group">
+                    <label class="form-label" id="threshold-label">Threshold (Gbps)</label>
+                    <input type="number" class="form-input" id="modal-threshold" value="4" min="1" max="100">
+                    <small id="threshold-hint" style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Min: 1 Gbps, Max: 100 Gbps</small>
+                </div>
+                <div class="form-group" id="duration-group">
+                    <label class="form-label">Duration (minutes)</label>
+                    <input type="number" class="form-input" id="modal-duration" value="1" min="1" max="60">
+                    <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Min: 1 min, Max: 60 min</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="modal-auto-adv" checked>
+                        Auto-advertisement (automatically advertise prefix when triggered)
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-save" id="btn-save" onclick="saveRule()">Create Rule</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="delete-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">Delete Rule</span>
+                <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 1rem;">Are you sure you want to delete this rule?</p>
+                <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+                    <strong id="delete-rule-name">Rule Name</strong>
+                </div>
+                <p style="color: var(--accent-red); font-size: 0.875rem;">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">Delete Rule</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Rule Modal -->
+    <div class="modal-overlay" id="edit-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">Edit Rule</span>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-rule-id">
+                <input type="hidden" id="edit-rule-type">
+
+                <div class="form-group" id="edit-threshold-group">
+                    <label class="form-label" id="edit-threshold-label">Threshold (Gbps)</label>
+                    <input type="number" class="form-input" id="edit-threshold" min="1" max="100">
+                    <small class="form-hint" id="edit-threshold-hint" style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Min: 1 Gbps, Max: 100 Gbps</small>
+                </div>
+                <div class="form-group" id="edit-duration-group">
+                    <label class="form-label">Duration (minutes)</label>
+                    <input type="number" class="form-input" id="edit-duration" min="1" max="60">
+                    <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Min: 1 min, Max: 60 min</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="edit-auto-adv">
+                        Auto-advertisement (automatically advertise prefix when triggered)
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" onclick="closeEditModal()">Cancel</button>
+                <button class="btn btn-save" onclick="saveEditRule()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let allRules = { threshold: [], advanced_ddos: [] };
+        let currentDeleteRule = null;
+
+        // Format bytes
+        function formatBytes(bytes) {
+            if (bytes >= 1000000000) {
+                return (bytes / 1000000000).toFixed(1) + ' Gbps';
+            } else if (bytes >= 1000000) {
+                return (bytes / 1000000).toFixed(1) + ' Mbps';
+            }
+            return bytes + ' bps';
+        }
+
+        // Format packets
+        function formatPackets(packets) {
+            if (packets >= 1000000) {
+                return (packets / 1000000).toFixed(1) + 'M pps';
+            } else if (packets >= 1000) {
+                return (packets / 1000).toFixed(0) + 'k pps';
+            }
+            return packets + ' pps';
+        }
+
+        // Load rules
+        async function loadRules() {
+            try {
+                const response = await fetch('/api/mnm-rules', { cache: 'no-store' });
+                const data = await response.json();
+
+                if (!data.success) {
+                    showError('threshold-body', data.error);
+                    showError('sflow-body', data.error);
+                    return;
+                }
+
+                allRules = data.rules;
+
+                // Update counts
+                document.getElementById('count-total').textContent = data.total;
+                document.getElementById('count-threshold').textContent = allRules.threshold.length;
+                document.getElementById('count-sflow').textContent = allRules.advanced_ddos.length;
+
+                // Render tables
+                renderThresholdRules();
+                renderSflowRules();
+
+            } catch (error) {
+                showError('threshold-body', error.message);
+                showError('sflow-body', error.message);
+            }
+        }
+
+        function showError(containerId, message) {
+            document.getElementById(containerId).innerHTML = `
+                <div class="error">Error: ${message}</div>
+            `;
+        }
+
+        // Render threshold rules
+        function renderThresholdRules() {
+            const container = document.getElementById('threshold-body');
+            const rules = allRules.threshold;
+
+            if (rules.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <p>No threshold rules configured</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Prefixes</th>
+                            <th>Threshold</th>
+                            <th>Duration</th>
+                            <th>Auto-Adv</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            rules.forEach(rule => {
+                const prefixes = rule.prefixes.map(p => `<span class="prefix-tag">${p}</span>`).join('');
+                const threshold = rule.bandwidth_threshold
+                    ? formatBytes(rule.bandwidth_threshold)
+                    : formatPackets(rule.packet_threshold);
+                const thresholdType = rule.bandwidth_threshold ? 'BPS' : 'PPS';
+                const thresholdValue = rule.bandwidth_threshold
+                    ? rule.bandwidth_threshold / 1000000000
+                    : rule.packet_threshold / 1000;
+                const autoAdv = rule.automatic_advertisement
+                    ? '<span class="badge badge-success">Yes</span>'
+                    : '<span class="badge badge-warning">No</span>';
+                const durationMins = parseInt(rule.duration) || 1;
+
+                html += `
+                    <tr ondblclick="openEditModal('${rule.id}', '${thresholdType.toLowerCase()}', ${thresholdValue}, ${durationMins}, ${rule.automatic_advertisement})" title="Double-click to edit">
+                        <td>${rule.name}</td>
+                        <td><div class="prefix-list">${prefixes}</div></td>
+                        <td><span class="badge badge-orange">${thresholdType}</span> ${threshold}</td>
+                        <td>${rule.duration}</td>
+                        <td>${autoAdv}</td>
+                        <td>
+                            <button class="btn-action btn-edit" onclick="event.stopPropagation(); openEditModal('${rule.id}', '${thresholdType.toLowerCase()}', ${thresholdValue}, ${durationMins}, ${rule.automatic_advertisement})">Edit</button>
+                            <button class="btn-action btn-delete" onclick="event.stopPropagation(); openDeleteModal('${rule.id}', '${rule.name}')">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Render sFlow rules
+        function renderSflowRules() {
+            const container = document.getElementById('sflow-body');
+            const rules = allRules.advanced_ddos;
+
+            if (rules.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔬</div>
+                        <p>No Advanced DDoS rules configured</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Prefixes</th>
+                            <th>Type</th>
+                            <th>Auto-Adv</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            rules.forEach(rule => {
+                const prefixes = rule.prefixes.map(p => `<span class="prefix-tag">${p}</span>`).join('');
+                const autoAdv = rule.automatic_advertisement
+                    ? '<span class="badge badge-success">Yes</span>'
+                    : '<span class="badge badge-warning">No</span>';
+
+                html += `
+                    <tr ondblclick="openEditModal('${rule.id}', 'sflow', 0, 0, ${rule.automatic_advertisement})" title="Double-click to edit">
+                        <td>${rule.name}</td>
+                        <td><div class="prefix-list">${prefixes}</div></td>
+                        <td><span class="badge badge-purple">sFlow</span></td>
+                        <td>${autoAdv}</td>
+                        <td>
+                            <button class="btn-action btn-edit" onclick="event.stopPropagation(); openEditModal('${rule.id}', 'sflow', 0, 0, ${rule.automatic_advertisement})">Edit</button>
+                            <button class="btn-action btn-delete" onclick="event.stopPropagation(); openDeleteModal('${rule.id}', '${rule.name}')">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Update modal fields based on type
+        function updateModalFields() {
+            const type = document.getElementById('modal-type').value;
+            const thresholdGroup = document.getElementById('threshold-group');
+            const durationGroup = document.getElementById('duration-group');
+            const thresholdLabel = document.getElementById('threshold-label');
+            const thresholdInput = document.getElementById('modal-threshold');
+            const thresholdHint = document.getElementById('threshold-hint');
+
+            if (type === 'bps') {
+                thresholdGroup.style.display = 'block';
+                durationGroup.style.display = 'block';
+                thresholdLabel.textContent = 'Threshold (Gbps)';
+                thresholdInput.min = 1;
+                thresholdInput.max = 100;
+                thresholdInput.value = '4';
+                thresholdHint.textContent = 'Min: 1 Gbps, Max: 100 Gbps';
+            } else if (type === 'pps') {
+                thresholdGroup.style.display = 'block';
+                durationGroup.style.display = 'block';
+                thresholdLabel.textContent = 'Threshold (kpps)';
+                thresholdInput.min = 10;
+                thresholdInput.max = 10000;
+                thresholdInput.value = '500';
+                thresholdHint.textContent = 'Min: 10 kpps, Max: 10,000 kpps (10M pps)';
+            } else {
+                thresholdGroup.style.display = 'none';
+                durationGroup.style.display = 'none';
+            }
+        }
+
+        // Open add modal
+        function openAddModal(type) {
+            const modal = document.getElementById('add-modal');
+            const typeSelect = document.getElementById('modal-type');
+            const typeGroup = document.getElementById('type-group');
+            const modalTitle = document.getElementById('modal-title');
+
+            if (type === 'threshold') {
+                // Show only BPS/PPS options
+                modalTitle.textContent = 'Add Threshold Rule';
+                typeGroup.style.display = 'block';
+                typeSelect.innerHTML = `
+                    <option value="bps">Bandwidth Threshold (BPS)</option>
+                    <option value="pps">Packet Threshold (PPS)</option>
+                `;
+                typeSelect.value = 'bps';
+            } else if (type === 'sflow') {
+                // sFlow only - hide type selector
+                modalTitle.textContent = 'Add sFlow Rule';
+                typeGroup.style.display = 'none';
+                typeSelect.innerHTML = `
+                    <option value="sflow">Advanced DDoS (sFlow)</option>
+                `;
+                typeSelect.value = 'sflow';
+            }
+
+            updateModalFields();
+            modal.classList.add('active');
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('add-modal').classList.remove('active');
+        }
+
+        // Open delete modal
+        function openDeleteModal(ruleId, ruleName) {
+            currentDeleteRule = ruleId;
+            document.getElementById('delete-rule-name').textContent = ruleName;
+            document.getElementById('delete-modal').classList.add('active');
+        }
+
+        // Close delete modal
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.remove('active');
+            currentDeleteRule = null;
+        }
+
+        // Save rule
+        async function saveRule() {
+            const type = document.getElementById('modal-type').value;
+            const prefix = document.getElementById('modal-prefix').value;
+            const autoAdv = document.getElementById('modal-auto-adv').checked;
+
+            let data = {
+                prefix: prefix,
+                automatic_advertisement: autoAdv
+            };
+
+            if (type === 'bps') {
+                const threshold = parseInt(document.getElementById('modal-threshold').value);
+                const duration = parseInt(document.getElementById('modal-duration').value);
+
+                // Validate BPS threshold
+                if (threshold < 1 || threshold > 100) {
+                    showToast('Error: Threshold must be between 1 and 100 Gbps', 'error');
+                    return;
+                }
+                // Validate duration
+                if (duration < 1 || duration > 60) {
+                    showToast('Error: Duration must be between 1 and 60 minutes', 'error');
+                    return;
+                }
+
+                data.type = 'bps';
+                data.threshold = threshold;
+                data.duration = duration;
+            } else if (type === 'pps') {
+                const threshold = parseInt(document.getElementById('modal-threshold').value);
+                const duration = parseInt(document.getElementById('modal-duration').value);
+
+                // Validate PPS threshold
+                if (threshold < 10 || threshold > 10000) {
+                    showToast('Error: Threshold must be between 10 and 10,000 kpps', 'error');
+                    return;
+                }
+                // Validate duration
+                if (duration < 1 || duration > 60) {
+                    showToast('Error: Duration must be between 1 and 60 minutes', 'error');
+                    return;
+                }
+
+                data.type = 'pps';
+                data.threshold = threshold;
+                data.duration = duration;
+            } else {
+                data.type = 'sflow';
+            }
+
+            try {
+                const response = await fetch('/api/mnm-rules', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Rule created successfully!', 'success');
+                    closeModal();
+                    await loadRules();
+                    updateRefreshTime();
+                } else {
+                    showToast('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
+        }
+
+        // Confirm delete
+        async function confirmDelete() {
+            if (!currentDeleteRule) return;
+
+            try {
+                const response = await fetch(`/api/mnm-rules/${currentDeleteRule}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Rule deleted successfully!', 'success');
+                    closeDeleteModal();
+                    await loadRules();
+                    updateRefreshTime();
+                } else {
+                    showToast('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
+        }
+
+        // Open edit modal
+        function openEditModal(ruleId, ruleType, threshold, duration, autoAdv) {
+            document.getElementById('edit-rule-id').value = ruleId;
+            document.getElementById('edit-rule-type').value = ruleType;
+            document.getElementById('edit-auto-adv').checked = autoAdv;
+
+            const thresholdGroup = document.getElementById('edit-threshold-group');
+            const durationGroup = document.getElementById('edit-duration-group');
+            const thresholdLabel = document.getElementById('edit-threshold-label');
+            const thresholdInput = document.getElementById('edit-threshold');
+            const thresholdHint = document.getElementById('edit-threshold-hint');
+            const durationInput = document.getElementById('edit-duration');
+
+            if (ruleType === 'sflow') {
+                // sFlow rules only have auto-adv editable
+                thresholdGroup.style.display = 'none';
+                durationGroup.style.display = 'none';
+            } else {
+                thresholdGroup.style.display = 'block';
+                durationGroup.style.display = 'block';
+
+                if (ruleType === 'bps') {
+                    thresholdLabel.textContent = 'Threshold (Gbps)';
+                    thresholdInput.min = 1;
+                    thresholdInput.max = 100;
+                    thresholdInput.value = threshold;
+                    thresholdHint.textContent = 'Min: 1 Gbps, Max: 100 Gbps';
+                } else if (ruleType === 'pps') {
+                    thresholdLabel.textContent = 'Threshold (kpps)';
+                    thresholdInput.min = 10;
+                    thresholdInput.max = 10000;
+                    thresholdInput.value = threshold;
+                    thresholdHint.textContent = 'Min: 10 kpps, Max: 10,000 kpps (10M pps)';
+                }
+                durationInput.value = duration;
+            }
+
+            document.getElementById('edit-modal').classList.add('active');
+        }
+
+        // Close edit modal
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.remove('active');
+        }
+
+        // Save edited rule
+        async function saveEditRule() {
+            const ruleId = document.getElementById('edit-rule-id').value;
+            const ruleType = document.getElementById('edit-rule-type').value;
+            const autoAdv = document.getElementById('edit-auto-adv').checked;
+
+            let data = {
+                automatic_advertisement: autoAdv
+            };
+
+            if (ruleType !== 'sflow') {
+                const threshold = parseInt(document.getElementById('edit-threshold').value);
+                const duration = parseInt(document.getElementById('edit-duration').value);
+
+                // Validate threshold
+                if (ruleType === 'bps') {
+                    if (threshold < 1 || threshold > 100) {
+                        showToast('Error: Threshold must be between 1 and 100 Gbps', 'error');
+                        return;
+                    }
+                    data.bandwidth_threshold = threshold * 1000000000; // Gbps to bps
+                } else if (ruleType === 'pps') {
+                    if (threshold < 10 || threshold > 10000) {
+                        showToast('Error: Threshold must be between 10 and 10,000 kpps', 'error');
+                        return;
+                    }
+                    data.packet_threshold = threshold * 1000; // kpps to pps
+                }
+
+                // Validate duration
+                if (duration < 1 || duration > 60) {
+                    showToast('Error: Duration must be between 1 and 60 minutes', 'error');
+                    return;
+                }
+                data.duration = `${duration}m0s`;
+            }
+
+            try {
+                const response = await fetch(`/api/mnm-rules/${ruleId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Rule updated successfully!', 'success');
+                    closeEditModal();
+                    await loadRules();
+                    updateRefreshTime();
+                } else {
+                    showToast('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
+        }
+
+        // Show toast
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            setTimeout(() => { toast.className = 'toast'; }, 4000);
+        }
+
+        // Update refresh time
+        function updateRefreshTime() {
+            const now = new Date();
+            const time = now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('last-refresh').textContent = `Last refresh: ${time}`;
+        }
+
+        // Manual refresh
+        async function manualRefresh() {
+            await loadRules();
+            updateRefreshTime();
+        }
+
+        // Close modals on overlay click
+        document.getElementById('add-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+        document.getElementById('delete-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeDeleteModal();
+        });
+        document.getElementById('edit-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeEditModal();
+        });
+
+        // Close modals on Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+                closeDeleteModal();
+                closeEditModal();
+            }
+        });
+
+        // Initialize
+        loadRules().then(() => updateRefreshTime());
+    </script>
+</body>
+</html>

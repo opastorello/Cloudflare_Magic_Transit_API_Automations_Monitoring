@@ -1,0 +1,31 @@
+[Unit]
+Description=Cloudflare Network Analytics Monitor
+Documentation=https://developers.cloudflare.com/analytics/graphql-api/
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/root/Cloudflare_MT_Integration
+ExecStart=/usr/bin/python3 /root/Cloudflare_MT_Integration/scripts/cloudflare-network-analytics-monitor.py
+Restart=always
+RestartSec=30
+
+# Restart limits: max 5 restarts in 5 minutes, then stop trying
+# Note: these belong in [Unit] section for systemd 250+
+# StartLimitIntervalSec=300
+# StartLimitBurst=5
+
+Environment=PYTHONUNBUFFERED=1
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cloudflare-analytics-monitor
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/root/Cloudflare_MT_Integration/logs /root/Cloudflare_MT_Integration/db
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,33 @@
+[Unit]
+Description=Cloudflare Magic Transit Webhook Receiver
+Documentation=https://developers.cloudflare.com/notifications/
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/root/Cloudflare_MT_Integration
+ExecStart=/usr/bin/python3 /root/Cloudflare_MT_Integration/scripts/cloudflare-webhook-receiver.py
+Restart=always
+RestartSec=5
+
+# Restart limits: max 5 restarts in 5 minutes
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cloudflare-webhook
+
+# Security (opzionale)
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/root/Cloudflare_MT_Integration/logs /root/Cloudflare_MT_Integration/db
+
+[Install]
+WantedBy=multi-user.target
