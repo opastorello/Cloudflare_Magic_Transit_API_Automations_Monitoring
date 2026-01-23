@@ -1,6 +1,6 @@
 # Cloudflare Magic Transit Dashboard
 
-**Version**: 2.9.19
+**Version**: 2.9.21
 **Created**: 2026-01-20
 **Last Updated**: 2026-01-23
 **Author**: GOLINE SOC
@@ -2038,6 +2038,21 @@ The Cloudflare CNI API (`/cni/interconnects` and `/cni/cnis`) differs from other
 | `mid` | Check every 10s | 10 seconds |
 | `high` | Check every 1s | 1 second |
 
+**Pass Rate Calculation (v2.9.20):**
+
+The pass rate is calculated from GraphQL `magicTransitTunnelHealthChecksAdaptiveGroups` using `resultStatus`:
+
+```
+pass_rate = count(resultStatus='ok') / total_count * 100
+```
+
+| resultStatus | Meaning | Counted as |
+|--------------|---------|------------|
+| `ok` | Health check passed | ✅ Passed |
+| `timeout` | Health check timed out | ❌ Failed |
+
+> **Note:** Prior to v2.9.20, the pass rate was incorrectly calculated using `avg(tunnelState)` which always returned ~50% for CNI connections. The fix uses `resultStatus` dimension to match Cloudflare dashboard values.
+
 **CSS Classes:**
 
 | Class | Color | Usage |
@@ -2652,6 +2667,16 @@ SERVICES = [
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.9.21 | 2026-01-23 | Improved constraint messages: "Can X in Y min (Cloudflare API cooldown)", "Ready to X", backend returns updated state |
+| 2.9.20 | 2026-01-23 | CNI/Tunnel pass rate fix: Calculate from `resultStatus=ok` instead of `tunnelState` to match Cloudflare dashboard |
+| 2.9.19 | 2026-01-23 | Network Analytics hostname resolution: Added Hostname column with reverse DNS lookup |
+| 2.9.18 | 2026-01-23 | Network Flow hostnames: Top Source/Router/Destination now show resolved hostnames |
+| 2.9.17 | 2026-01-23 | Network Analytics: Increased event limit from 30 to 100 |
+| 2.9.16 | 2026-01-22 | Network Analytics status indicator: Shows paused/active based on prefix advertisement |
+| 2.9.15 | 2026-01-22 | Stats: Count only real attacks (event_type=START) instead of all events |
+| 2.9.13 | 2026-01-22 | Stats API timestamp fix: Use SQLite `datetime()` instead of Python isoformat() |
+| 2.9.12 | 2026-01-21 | Prefix Manager logging: Manual operations appear in dashboard attack log |
+| 2.9.11 | 2026-01-21 | Autowithdraw API fix: Correct endpoint for detecting advertised prefixes |
 | 2.9.10 | 2026-01-21 | Fixed attack events ordering: `ORDER BY created_at DESC`, increased LIMIT to 50 |
 | 2.9.9 | 2026-01-21 | Auto-advertisement support: Complete attack lifecycle display, new action labels |
 | 2.9.8 | 2026-01-21 | User-friendly event type labels: 🚨 ATTACK, ✅ ENDED, 📡 ADVERTISE, 📤 WITHDRAW |

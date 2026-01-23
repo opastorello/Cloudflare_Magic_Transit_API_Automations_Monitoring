@@ -2,7 +2,7 @@
   <img src="https://www.cloudflare.com/img/logo-web-badges/cf-logo-on-white-bg.svg" alt="Cloudflare" width="200"/>
 </p>
 
-<h1 align="center">Cloudflare Magic Transit Integration v2.9.19</h1>
+<h1 align="center">Cloudflare Magic Transit Integration v2.9.21</h1>
 
 <p align="center">
   <strong>Enterprise Magic Transit orchestration platform: Real-time dashboard, intelligent DDoS automation,<br/>custom rules engine, traffic analytics, connectors monitoring, and SOC-ready notifications</strong>

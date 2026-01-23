@@ -2377,6 +2377,8 @@
                 if (data.success) {
                     // Show success message
                     alert(`✅ ${data.message}`);
+                    // Small delay to ensure Cloudflare API has propagated the state change
+                    await new Promise(resolve => setTimeout(resolve, 500));
                     // Refresh the prefixes list
                     await loadPrefixes();
                 } else {
@@ -2536,10 +2538,10 @@
 
                     if (remainingMin > 0) {
                         const action = isAdvertised ? 'withdraw' : 'advertise';
-                        constraintHtml = `<div class="calm-status constraint">⏱️ Can ${action} in ${remainingMin.toFixed(1)} min</div>`;
+                        constraintHtml = `<div class="calm-status constraint">⏱️ Can ${action} in ${remainingMin.toFixed(1)} min <span style="opacity:0.7;font-size:0.85em">(Cloudflare API cooldown)</span></div>`;
                     } else {
                         const action = isAdvertised ? 'withdraw' : 'advertise';
-                        constraintHtml = `<div class="calm-status ready">✅ Can ${action} now</div>`;
+                        constraintHtml = `<div class="calm-status ready">✅ Ready to ${action}</div>`;
                     }
                 }
 

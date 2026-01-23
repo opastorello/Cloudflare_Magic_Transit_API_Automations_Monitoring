@@ -2036,10 +2036,16 @@ def api_prefix_advertise(cidr):
             # Send Telegram notification
             notify_prefix_action('advertise', cidr, description)
 
+            # Extract updated state from API response
+            api_result = result.get('result', {})
+            on_demand = api_result.get('on_demand', {})
+
             return jsonify({
                 "success": True,
                 "message": f"Prefix {cidr} advertised successfully",
-                "cidr": cidr
+                "cidr": cidr,
+                "advertised": on_demand.get('advertised', True),
+                "advertised_modified_at": on_demand.get('advertised_modified_at', '')
             })
         else:
             return jsonify({"success": False, "error": result.get('error', 'Unknown error')}), 500
@@ -2101,10 +2107,16 @@ def api_prefix_withdraw(cidr):
             # Send Telegram notification
             notify_prefix_action('withdraw', cidr, description)
 
+            # Extract updated state from API response
+            api_result = result.get('result', {})
+            on_demand = api_result.get('on_demand', {})
+
             return jsonify({
                 "success": True,
                 "message": f"Prefix {cidr} withdrawn successfully",
-                "cidr": cidr
+                "cidr": cidr,
+                "advertised": on_demand.get('advertised', False),
+                "advertised_modified_at": on_demand.get('advertised_modified_at', '')
             })
         else:
             return jsonify({"success": False, "error": result.get('error', 'Unknown error')}), 500
@@ -2124,7 +2136,11 @@ def page_connectors():
 
 
 def fetch_tunnel_health_stats():
-    """Fetch tunnel health check statistics from GraphQL API (1 hour)"""
+    """Fetch tunnel health check statistics from GraphQL API (1 hour)
+
+    Pass rate is calculated as: count(resultStatus=ok) / total_count * 100
+    This matches Cloudflare dashboard calculation.
+    """
     try:
         now = datetime.now(timezone.utc)
         start_time = (now - timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -2135,19 +2151,17 @@ def fetch_tunnel_health_stats():
             viewer {
                 accounts(filter: {accountTag: $accountTag}) {
                     magicTransitTunnelHealthChecksAdaptiveGroups(
-                        limit: 1000,
+                        limit: 10000,
                         filter: {
                             datetime_geq: $since,
                             datetime_lt: $until
                         }
                     ) {
                         count
-                        avg {
-                            tunnelState
-                        }
                         dimensions {
                             tunnelName
                             edgeColoName
+                            resultStatus
                         }
                     }
                 }
@@ -2181,7 +2195,7 @@ def fetch_tunnel_health_stats():
 
         health_groups = accounts[0].get('magicTransitTunnelHealthChecksAdaptiveGroups', [])
 
-        # Aggregate by tunnel name
+        # Aggregate by tunnel name, counting ok vs total
         tunnel_stats = {}
         for group in health_groups:
             tunnel_name = group.get('dimensions', {}).get('tunnelName')
@@ -2189,26 +2203,27 @@ def fetch_tunnel_health_stats():
                 continue
 
             count = group.get('count', 0)
-            state = group.get('avg', {}).get('tunnelState', 0)
+            result_status = group.get('dimensions', {}).get('resultStatus', '')
 
             if tunnel_name not in tunnel_stats:
                 tunnel_stats[tunnel_name] = {
                     'total_checks': 0,
-                    'weighted_state': 0,
-                    'colos_count': 0
+                    'ok_checks': 0,
+                    'colos': set()
                 }
 
             tunnel_stats[tunnel_name]['total_checks'] += count
-            tunnel_stats[tunnel_name]['weighted_state'] += state * count
-            tunnel_stats[tunnel_name]['colos_count'] += 1
+            if result_status == 'ok':
+                tunnel_stats[tunnel_name]['ok_checks'] += count
+            tunnel_stats[tunnel_name]['colos'].add(group.get('dimensions', {}).get('edgeColoName', ''))
 
-        # Calculate pass rates
+        # Calculate pass rates based on resultStatus=ok percentage
         result = {}
         for name, stats in tunnel_stats.items():
             total = stats['total_checks']
             if total > 0:
-                avg_state = stats['weighted_state'] / total
-                pass_rate = avg_state * 100  # Convert 0-1 to percentage
+                ok_count = stats['ok_checks']
+                pass_rate = (ok_count / total) * 100
 
                 # Determine status based on pass rate
                 if pass_rate >= 80:
@@ -2221,7 +2236,8 @@ def fetch_tunnel_health_stats():
                 result[name] = {
                     'pass_rate': round(pass_rate, 2),
                     'total_checks': total,
-                    'colos_count': stats['colos_count'],
+                    'ok_checks': ok_count,
+                    'colos_count': len(stats['colos']),
                     'status': status
                 }
 
