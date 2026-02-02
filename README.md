@@ -2,7 +2,7 @@
   <img src="https://www.cloudflare.com/img/logo-web-badges/cf-logo-on-white-bg.svg" alt="Cloudflare" width="200"/>
 </p>
 
-<h1 align="center">Cloudflare Magic Transit Integration v2.9.21</h1>
+<h1 align="center">Cloudflare Magic Transit Integration v2.9.22</h1>
 
 <p align="center">
   <strong>Enterprise Magic Transit orchestration platform: Real-time dashboard, intelligent DDoS automation,<br/>custom rules engine, traffic analytics, connectors monitoring, and SOC-ready notifications</strong>
@@ -32,14 +32,25 @@
 
 ---
 
-## 🆕 What's New in v2.9.21
+## 🆕 What's New in v2.9.22
+
+### DNS Timeout Graceful Handling (v2.9.22)
+- **BUG FIX**: "Error: 1 (of 70) futures unfinished" no longer displayed in Network Analytics
+- **Cause**: `as_completed(futures, timeout=5)` raised TimeoutError when DNS lookups didn't complete
+- **Fix**: Wrapped in try/except TimeoutError to continue with partial results
+- **Result**: Dashboard shows data even when some hostname resolutions timeout
+
+### Cloudflare Anycast Traffic Visibility (v1.3.10)
+- **NEW**: Network Analytics Monitor now shows traffic to Cloudflare anycast IPs
+- **Prefixes Added**: `162.159.0.0/16`, `172.64.0.0/13`, `104.16.0.0/13`
+- **Before**: Only showed traffic to direct GOLINE IPs (185.54.80.0/22)
+- **After**: Shows all DDoS mitigation events including Magic Transit pass-through
 
 ### Improved Prefix Constraint Messages (v2.9.21)
 - **Better UI**: Constraint messages now show Cloudflare attribution
   - During cooldown: `⏱️ Can advertise in X.X min (Cloudflare API cooldown)`
   - When ready: `✅ Ready to advertise`
 - **Fix**: Backend returns updated state in advertise/withdraw response
-- **Fix**: 500ms delay before refresh to allow API state propagation
 
 ### CNI/Tunnel Pass Rate Fix (v2.9.20)
 - **BUG FIX**: CNI pass rate now correctly shows ~74% instead of incorrect 50%
@@ -496,9 +507,9 @@ flowchart TD
 | Script | Version | Description | Service |
 |--------|---------|-------------|---------|
 | `cloudflare-webhook-receiver.py` | v1.9.0 | Webhook receiver - all events logged to DB | `cloudflare-webhook.service` |
-| `cloudflare-network-analytics-monitor.py` | v1.3.9 | GraphQL poller with GeoIP2 enrichment | `cloudflare-analytics-monitor.service` |
+| `cloudflare-network-analytics-monitor.py` | v1.3.10 | GraphQL poller with GeoIP2 enrichment | `cloudflare-analytics-monitor.service` |
 | `cloudflare-autowithdraw.py` | v3.4 | **ONLY** service that performs BGP withdrawals | `cloudflare-autowithdraw.service` |
-| `dashboard/app.py` | v2.9.21 | Web dashboard with prefix management | `cloudflare-dashboard.service` |
+| `dashboard/app.py` | v2.9.22 | Web dashboard with prefix management | `cloudflare-dashboard.service` |
 
 ### Management Tools
 
@@ -702,7 +713,7 @@ cloudflare-magic-transit/
 │   ├── cloudflare-services-watchdog.sh         # HA watchdog (v1.2)
 │   └── db_manager.py                           # Database operations (v1.3.0)
 ├── dashboard/
-│   ├── app.py                                  # Flask web dashboard (v2.9.21)
+│   ├── app.py                                  # Flask web dashboard (v2.9.22)
 │   ├── templates/
 │   │   ├── dashboard.html                      # Main dashboard
 │   │   ├── login.html                          # Login page
