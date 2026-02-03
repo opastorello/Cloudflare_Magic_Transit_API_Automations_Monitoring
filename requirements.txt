@@ -6,3 +6,6 @@ flask>=2.0.0
 
 # HTTP client for Cloudflare API and Telegram
 requests>=2.28.0
+
+# Model Context Protocol server
+mcp>=1.0.0

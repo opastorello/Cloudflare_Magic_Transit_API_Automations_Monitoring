@@ -517,6 +517,11 @@ flowchart TD
 | `cloudflare-network-analytics-monitor.py` | v1.3.10 | GraphQL poller with GeoIP2 enrichment | `cloudflare-analytics-monitor.service` |
 | `cloudflare-autowithdraw.py` | v3.4 | **ONLY** service that performs BGP withdrawals | `cloudflare-autowithdraw.service` |
 | `dashboard/app.py` | v2.9.22 | Web dashboard with prefix management | `cloudflare-dashboard.service` |
+| `scripts/mcp_server.py` | v1.0.0 | MCP server exposing dashboard API tools and database insights | (run manually) |
+
+**MCP Server Notes**
+- Uses `MAGIC_TRANSIT_DB_PATH` to override the SQLite database location (default: `db/magic_transit.db`).
+- Uses `DASHBOARD_BASE_URL`, `DASHBOARD_USERNAME`, and `DASHBOARD_PASSWORD` to access authenticated dashboard APIs (default URL: `http://localhost:8081`).
 
 ### Management Tools
 
